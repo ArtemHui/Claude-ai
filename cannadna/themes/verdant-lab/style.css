@@ -1,0 +1,187 @@
+/*
+Theme Name: Verdant Lab
+Theme URI: https://example.com/verdant-lab
+Description: Dark editorial canvas for an affiliate review hub. Child of Twenty Twenty-Five; supplies the page-level palette, width and typography that the Review Hub components sit inside.
+Author: Review Hub
+Version: 0.1.0
+Requires at least: 6.5
+Tested up to: 7.1
+Requires PHP: 7.4
+Template: twentytwentyfive
+License: GPL-2.0-or-later
+Text Domain: verdant-lab
+*/
+
+:root {
+	--vl-base: #0c1512;
+	--vl-surface: #131f1b;
+	--vl-border: #26382f;
+	--vl-text: #e9f1ec;
+	--vl-text-muted: #9db0a6;
+	--vl-accent: #4ade80;
+	--vl-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	--vl-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+	--vl-shell: 1240px;
+}
+
+html {
+	background: var(--vl-base);
+}
+
+body,
+body.wp-site-blocks,
+.editor-styles-wrapper {
+	background: var(--vl-base);
+	color: var(--vl-text);
+	font-family: var(--vl-font);
+	-webkit-font-smoothing: antialiased;
+}
+
+/* Twenty Twenty-Five constrains content narrowly; the review grids need room. */
+.wp-site-blocks .is-layout-constrained > :where(:not(.alignleft):not(.alignright):not(.alignfull)),
+.wp-site-blocks > .is-layout-constrained,
+.entry-content > :not(.alignfull):not(.alignwide) {
+	max-width: var(--vl-shell);
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.wp-site-blocks {
+	padding-left: clamp(16px, 4vw, 32px);
+	padding-right: clamp(16px, 4vw, 32px);
+}
+
+h1,
+h2,
+h3,
+h4 {
+	color: var(--vl-text);
+	letter-spacing: -0.015em;
+	line-height: 1.15;
+}
+
+.entry-content h2,
+.wp-block-post-content h2 {
+	font-size: clamp(1.5rem, 3vw, 2rem);
+	margin: 56px 0 20px;
+}
+
+.wp-block-post-title,
+.entry-title {
+	font-size: clamp(2rem, 5vw, 3.25rem);
+	margin-bottom: 32px;
+}
+
+p,
+li {
+	color: var(--vl-text-muted);
+	line-height: 1.65;
+}
+
+a {
+	color: var(--vl-accent);
+}
+
+/* Header and footer inherit the dark canvas rather than the parent's white. */
+.wp-block-template-part,
+header.wp-block-template-part,
+footer.wp-block-template-part {
+	background: transparent;
+	color: var(--vl-text);
+}
+
+.wp-block-site-title a,
+.wp-block-site-title {
+	color: var(--vl-text);
+	font-weight: 700;
+	text-decoration: none;
+	letter-spacing: -0.02em;
+}
+
+.wp-block-navigation a {
+	color: var(--vl-text-muted);
+	text-decoration: none;
+}
+
+.wp-block-navigation a:hover {
+	color: var(--vl-text);
+}
+
+footer.wp-block-template-part {
+	border-top: 1px solid var(--vl-border);
+	margin-top: 72px;
+	padding-top: 40px;
+}
+
+/* Compliance modals must stay legible against the dark canvas. */
+.vl-gate {
+	position: fixed;
+	inset: 0;
+	z-index: 100000;
+	display: grid;
+	place-items: center;
+	background: rgba(4, 10, 8, 0.92);
+	padding: 20px;
+}
+
+.vl-gate__panel {
+	max-width: 440px;
+	width: 100%;
+	background: var(--vl-surface);
+	border: 1px solid var(--vl-border);
+	border-radius: 12px;
+	padding: 32px 28px;
+	text-align: center;
+}
+
+.vl-gate__panel h2 {
+	margin: 0 0 12px;
+	font-size: 1.375rem;
+}
+
+.vl-gate__panel p {
+	margin: 0 0 24px;
+	font-size: 0.9375rem;
+}
+
+.vl-gate__actions {
+	display: flex;
+	gap: 10px;
+	justify-content: center;
+	flex-wrap: wrap;
+}
+
+.vl-gate__btn {
+	padding: 11px 22px;
+	border-radius: 6px;
+	border: 1px solid var(--vl-border);
+	background: transparent;
+	color: var(--vl-text-muted);
+	font: inherit;
+	font-size: 0.9375rem;
+	cursor: pointer;
+}
+
+.vl-gate__btn--primary {
+	background: var(--vl-accent);
+	border-color: var(--vl-accent);
+	color: #04170c;
+	font-weight: 600;
+}
+
+.vl-gate__btn:focus-visible {
+	outline: 2px solid var(--vl-accent);
+	outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+	.wp-site-blocks {
+		padding-left: 16px;
+		padding-right: 16px;
+	}
+
+	.entry-content h2,
+	.wp-block-post-content h2 {
+		margin: 40px 0 16px;
+	}
+}

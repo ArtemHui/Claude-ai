@@ -1,2 +1,6 @@
 __pycache__/
 *.pyc
+
+# Local WordPress dev harness (core + SQLite DB), not part of the deliverable
+wp-dev/
+review-hub.zip
