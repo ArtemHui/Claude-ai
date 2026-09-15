@@ -67,6 +67,19 @@ class Review_Hub_REST {
 
 		register_rest_route(
 			self::NAMESPACE,
+			'/item',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'get_item' ),
+				'permission_callback' => '__return_true',
+				'args'                => array(
+					'id' => array( 'default' => 0 ),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
 			'/compare',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
@@ -183,6 +196,51 @@ class Review_Hub_REST {
 				),
 			)
 		);
+	}
+
+	/**
+	 * Single item, with the extra detail the quick-view panel shows.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function get_item( WP_REST_Request $request ) {
+		$id   = absint( $request->get_param( 'id' ) );
+		$post = get_post( $id );
+
+		if ( ! $post || 'publish' !== $post->post_status ) {
+			return new WP_Error( 'rh_not_found', __( 'Not found.', 'review-hub' ), array( 'status' => 404 ) );
+		}
+
+		if ( ! in_array(
+			$post->post_type,
+			array( Review_Hub_Content_Types::POST_TYPE_PRODUCT, Review_Hub_Content_Types::POST_TYPE_BRAND ),
+			true
+		) ) {
+			return new WP_Error( 'rh_not_found', __( 'Not found.', 'review-hub' ), array( 'status' => 404 ) );
+		}
+
+		$card = Review_Hub_Query::card( $id );
+
+		$card['image_full']  = get_the_post_thumbnail_url( $id, 'large' );
+		$card['body']        = wp_kses_post( wpautop( get_post_field( 'post_content', $id ) ) );
+		$card['concerns']    = self::term_names( $id, Review_Hub_Content_Types::TAX_CONCERN );
+		$card['brand_link']  = $card['brand_id'] ? get_permalink( $card['brand_id'] ) : '';
+
+		return rest_ensure_response( $card );
+	}
+
+	/**
+	 * Term names for a post, as a flat array.
+	 *
+	 * @param int    $post_id  Post ID.
+	 * @param string $taxonomy Taxonomy key.
+	 * @return string[]
+	 */
+	private static function term_names( $post_id, $taxonomy ) {
+		$terms = wp_get_post_terms( $post_id, $taxonomy, array( 'fields' => 'names' ) );
+
+		return is_wp_error( $terms ) ? array() : array_values( $terms );
 	}
 
 	/**

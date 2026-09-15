@@ -33,23 +33,20 @@ class Review_Hub_Assets {
 		wp_register_style( 'swiper', REVIEW_HUB_URL . 'assets/vendor/swiper.min.css', array(), '11.2.10' );
 		wp_register_script( 'swiper', REVIEW_HUB_URL . 'assets/vendor/swiper.min.js', array(), '11.2.10', true );
 
-		wp_register_style( 'aos', REVIEW_HUB_URL . 'assets/vendor/aos.css', array(), '2.3.4' );
-		wp_register_script( 'aos', REVIEW_HUB_URL . 'assets/vendor/aos.js', array(), '2.3.4', true );
-
 		wp_register_style( 'glightbox', REVIEW_HUB_URL . 'assets/vendor/glightbox.min.css', array(), '3.3.1' );
 		wp_register_script( 'glightbox', REVIEW_HUB_URL . 'assets/vendor/glightbox.min.js', array(), '3.3.1', true );
 
 		wp_register_style(
 			'review-hub',
 			REVIEW_HUB_URL . 'assets/css/review-hub.css',
-			array( 'swiper', 'aos', 'glightbox' ),
+			array( 'swiper', 'glightbox' ),
 			REVIEW_HUB_VERSION
 		);
 
 		wp_register_script(
 			'review-hub',
 			REVIEW_HUB_URL . 'assets/js/review-hub.js',
-			array( 'swiper', 'aos', 'glightbox' ),
+			array( 'swiper', 'glightbox' ),
 			REVIEW_HUB_VERSION,
 			true
 		);
@@ -70,6 +67,8 @@ class Review_Hub_Assets {
 					'labLabel'   => __( 'Lab', 'review-hub' ),
 					'verified'   => __( 'Verified', 'review-hub' ),
 					'startOver'  => __( 'Start over', 'review-hub' ),
+					'quickView'  => __( 'Quick view', 'review-hub' ),
+					'findProduct' => __( 'Find your product', 'review-hub' ),
 					'back'       => __( 'Back', 'review-hub' ),
 					'step'       => __( 'Step %1$d of %2$d', 'review-hub' ),
 				),

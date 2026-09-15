@@ -103,13 +103,11 @@ class Review_Hub_Shortcodes {
 		ob_start();
 		?>
 		<div class="rh-categories" data-rh-categories data-target="<?php echo esc_attr( $atts['target'] ); ?>">
-			<?php foreach ( $terms as $index => $term ) : ?>
+			<?php foreach ( $terms as $term ) : ?>
 				<button type="button"
 					class="rh-category"
 					data-slug="<?php echo esc_attr( $term->slug ); ?>"
-					aria-pressed="false"
-					data-aos="fade-up"
-					data-aos-delay="<?php echo esc_attr( (string) min( 300, $index * 40 ) ); ?>">
+					aria-pressed="false">
 					<span class="rh-category__icon" aria-hidden="true">
 						<?php echo self::category_icon( $term->slug ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 					</span>
@@ -523,6 +521,10 @@ class Review_Hub_Shortcodes {
 					</span>
 				<?php endif; ?>
 			</a>
+
+			<button type="button" class="rh-card__quick" data-rh-quickview="<?php echo esc_attr( (string) $card['id'] ); ?>">
+				<?php esc_html_e( 'Quick view', 'review-hub' ); ?>
+			</button>
 
 			<div class="rh-card__body">
 				<?php if ( '' !== $card['brand'] ) : ?>

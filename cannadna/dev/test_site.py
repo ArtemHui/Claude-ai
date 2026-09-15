@@ -167,6 +167,128 @@ with sync_playwright() as p:
     page.wait_for_timeout(600)
     check("comparison caps at 3 brands", not boxes.nth(3).is_checked())
 
+    # --- quick view modal --------------------------------------------------
+    page.goto(BASE)
+    page.wait_for_load_state("networkidle")
+    page.wait_for_timeout(600)
+
+    page.locator("[data-rh-quickview]").first.click()
+    page.wait_for_timeout(1400)
+    qv = page.locator(".rh-qv__panel")
+    check("quick view opens without page load", qv.is_visible())
+    check("quick view loads item detail",
+          page.locator(".rh-qv__title").count() > 0,
+          page.locator(".rh-qv__title").inner_text() if page.locator(".rh-qv__title").count() else "")
+    # Design tokens must resolve outside the shortcode wrappers: the modal is
+    # appended to <body>, and scoped tokens left it with no background.
+    panel_bg = qv.evaluate("el => getComputedStyle(el).backgroundColor")
+    check("quick view panel has a solid background",
+          panel_bg not in ("rgba(0, 0, 0, 0)", "transparent"), panel_bg)
+    cta_bg = page.locator(".rh-qv__actions .rh-card__cta").first.evaluate(
+        "el => getComputedStyle(el).backgroundColor")
+    check("quick view CTA keeps its accent fill",
+          cta_bg not in ("rgba(0, 0, 0, 0)", "transparent"), cta_bg)
+
+    meter = page.locator(".rh-qv__meter-fill")
+    check("score meter animates to a width",
+          meter.count() > 0 and meter.evaluate("el => parseFloat(getComputedStyle(el).width)") > 0)
+    check("quick view CTA is tracked",
+          "/go/" in (page.locator(".rh-qv__actions .rh-card__cta").first.get_attribute("href") or ""))
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(400)
+    check("quick view closes on Escape", page.locator(".rh-qv__panel").count() == 0)
+
+    # --- motion system ------------------------------------------------------
+    def reveal_state(pg):
+        return pg.evaluate("""() => {
+            const cards = [...document.querySelectorAll('.rh-card')];
+            return {
+                total: cards.length,
+                hidden: cards.filter(c => parseFloat(getComputedStyle(c).opacity) < 1).length,
+                marked: cards.filter(c => c.classList.contains('rh-reveal')).length
+            };
+        }""")
+
+    page.goto(BASE)
+    page.wait_for_load_state("networkidle")
+    page.wait_for_timeout(300)
+    early = reveal_state(page)
+    check("reveal animation is active (below-fold cards start hidden)",
+          early["marked"] > 0 and early["hidden"] > 0, str(early))
+
+    # Failsafe must reveal everything even though nothing was scrolled.
+    page.wait_for_timeout(3200)
+    late = reveal_state(page)
+    check("failsafe reveals all cards without any scrolling",
+          late["hidden"] == 0, str(late))
+
+    # Content must be visible with JS disabled entirely.
+    nojs = browser.new_context(java_script_enabled=False, viewport={"width": 1440, "height": 1000})
+    nojs_page = nojs.new_page()
+    nojs_page.goto(BASE)
+    nojs_page.wait_for_timeout(600)
+    nojs_hidden = nojs_page.evaluate("""() => [...document.querySelectorAll('.rh-card')]
+        .filter(c => parseFloat(getComputedStyle(c).opacity) < 1).length""")
+    nojs_cards = nojs_page.locator(".rh-card").count()
+    check("cards render and stay visible with JS disabled",
+          nojs_cards > 0 and nojs_hidden == 0, f"{nojs_cards} cards, {nojs_hidden} hidden")
+    nojs.close()
+
+    # --- filter pills + URL state ------------------------------------------
+    page.locator(".rh-category", has_text="Oils").first.click()
+    page.wait_for_timeout(1200)
+    check("active filter shown as a pill", page.locator(".rh-pill").count() > 0,
+          page.locator(".rh-pill").first.inner_text() if page.locator(".rh-pill").count() else "")
+    check("filter state written to URL", "category=oil" in page.url, page.url)
+
+    # Default select options ("Any score" = value "0") must not become pills.
+    pill_labels = page.locator(".rh-pill").all_inner_texts()
+    check("default select options do not become pills",
+          not any("any" in p.lower() for p in pill_labels),
+          str([p.split("\n")[0] for p in pill_labels]))
+
+    filtered_count = page.locator("[data-rh-results] .rh-card").count()
+    page.go_back()
+    page.wait_for_timeout(1200)
+    check("back button restores unfiltered view",
+          page.locator("[data-rh-results] .rh-card").count() != filtered_count
+          and "category=" not in page.url, page.url)
+
+    # Shareable URL: a fresh load with params should come back filtered.
+    shared = browser.new_page(viewport={"width": 1440, "height": 1000})
+    shared.goto(BASE + "?category=oil")
+    shared.wait_for_load_state("networkidle")
+    if shared.locator("#vl-gate-yes").count():
+        shared.locator("#vl-gate-yes").click()
+    shared.wait_for_timeout(1500)
+    check("shared filtered URL restores the filter",
+          shared.locator(".rh-pill").count() > 0
+          and shared.locator('.rh-category[aria-pressed="true"]').count() > 0,
+          f'{shared.locator(".rh-pill").count()} pills')
+    shared.close()
+
+    # removing the pill clears the filter
+    page.goto(BASE + "?category=oil")
+    page.wait_for_load_state("networkidle")
+    page.wait_for_timeout(1500)
+    page.locator(".rh-pill").first.click()
+    page.wait_for_timeout(1200)
+    check("removing a pill clears that filter", page.locator(".rh-pill").count() == 0)
+
+    # --- sticky finder CTA --------------------------------------------------
+    page.evaluate("window.scrollTo(0, 400)")
+    page.wait_for_timeout(900)
+    sticky = page.locator("[data-rh-sticky-finder]")
+    check("sticky finder CTA exists", sticky.count() > 0)
+    check("sticky finder becomes visible when finder is off-screen",
+          sticky.evaluate("el => el.classList.contains('is-visible')"))
+    sticky.click()
+    page.wait_for_timeout(1400)
+    check("sticky CTA scrolls the finder into view",
+          page.locator("[data-rh-finder]").first.evaluate(
+              "el => { const r = el.getBoundingClientRect();"
+              "return r.top < window.innerHeight && r.bottom > 0; }"))
+
     # --- affiliate click tracking -----------------------------------------
     offer = page.locator(".rh-card__cta").first
     href = offer.get_attribute("href")
@@ -195,7 +317,8 @@ with sync_playwright() as p:
     ipad.wait_for_load_state("networkidle")
     if ipad.locator("#vl-gate-yes").count():
         ipad.locator("#vl-gate-yes").click()
-        ipad.wait_for_timeout(300)
+    # Wait past the reveal failsafe so the settled state is measured.
+    ipad.wait_for_timeout(3200)
     ipad.wait_for_timeout(800)
     scroll_w = ipad.evaluate("document.documentElement.scrollWidth")
     client_w = ipad.evaluate("document.documentElement.clientWidth")
@@ -228,7 +351,7 @@ with sync_playwright() as p:
     phone.wait_for_load_state("networkidle")
     if phone.locator("#vl-gate-yes").count():
         phone.locator("#vl-gate-yes").click()
-        phone.wait_for_timeout(300)
+    phone.wait_for_timeout(3200)
     phone.wait_for_timeout(800)
     sw = phone.evaluate("document.documentElement.scrollWidth")
     cw = phone.evaluate("document.documentElement.clientWidth")

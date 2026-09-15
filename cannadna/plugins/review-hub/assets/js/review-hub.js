@@ -68,6 +68,9 @@
 
 		html += '</a>';
 
+		html += '<button type="button" class="rh-card__quick" data-rh-quickview="' + esc( card.id ) + '">'
+			+ esc( i18n.quickView || 'Quick view' ) + '</button>';
+
 		html += '<div class="rh-card__body">';
 
 		if ( card.brand ) {
@@ -129,7 +132,298 @@
 		return html;
 	}
 
+	/* ----------------------------------------------------------- motion -- */
+
+	/**
+	 * Reveal-on-scroll.
+	 *
+	 * The hidden state is applied by JS, never by the stylesheet, so content is
+	 * visible by default. If this never runs, nothing disappears — which is the
+	 * failure mode that made the earlier AOS-on-cards approach unsafe.
+	 */
+	var revealObserver = null;
+
+	function observeReveal( scope ) {
+		if ( reduceMotion || typeof IntersectionObserver === 'undefined' ) {
+			return;
+		}
+
+		if ( ! revealObserver ) {
+			revealObserver = new IntersectionObserver( function ( entries ) {
+				entries.forEach( function ( entry ) {
+					if ( ! entry.isIntersecting ) {
+						return;
+					}
+
+					entry.target.classList.add( 'is-revealed' );
+					revealObserver.unobserve( entry.target );
+				} );
+			}, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' } );
+		}
+
+		var targets = ( scope || document ).querySelectorAll( '.rh-card:not(.rh-reveal), .rh-category:not(.rh-reveal)' );
+
+		targets.forEach( function ( el, index ) {
+			// Anything already in view is revealed immediately, without a stagger,
+			// so above-the-fold content never waits on a scroll event.
+			var box = el.getBoundingClientRect();
+
+			el.classList.add( 'rh-reveal' );
+
+			if ( box.top < window.innerHeight && box.bottom > 0 ) {
+				el.classList.add( 'is-revealed' );
+				return;
+			}
+
+			el.style.setProperty( '--rh-reveal-delay', ( index % 4 ) * 45 + 'ms' );
+			revealObserver.observe( el );
+		} );
+
+		scheduleRevealFailsafe();
+	}
+
+	/**
+	 * Failsafe: reveal anything still hidden after a few seconds.
+	 *
+	 * Scroll-reveal leaves below-the-fold content at opacity 0 indefinitely if
+	 * nobody scrolls — which is what a crawler, a print, or a full-page
+	 * screenshot sees. A visitor scrolling normally reaches these cards long
+	 * before the timer, so the animation is unaffected in practice.
+	 */
+	var failsafeTimer = null;
+
+	function scheduleRevealFailsafe() {
+		if ( failsafeTimer ) {
+			return;
+		}
+
+		failsafeTimer = setTimeout( function () {
+			document.querySelectorAll( '.rh-reveal:not(.is-revealed)' ).forEach( function ( el ) {
+				el.classList.add( 'is-revealed' );
+			} );
+
+			failsafeTimer = null;
+		}, 2500 );
+	}
+
+	/* ------------------------------------------------------- quick view -- */
+
+	var quickView = ( function () {
+		var overlay = null;
+		var lastFocus = null;
+
+		function close() {
+			if ( ! overlay ) {
+				return;
+			}
+
+			overlay.remove();
+			overlay = null;
+			document.documentElement.style.overflow = '';
+			document.removeEventListener( 'keydown', onKey );
+
+			if ( lastFocus ) {
+				lastFocus.focus();
+			}
+		}
+
+		function onKey( event ) {
+			if ( event.key === 'Escape' ) {
+				close();
+				return;
+			}
+
+			if ( event.key !== 'Tab' || ! overlay ) {
+				return;
+			}
+
+			var focusable = overlay.querySelectorAll( 'a[href], button:not([disabled])' );
+
+			if ( ! focusable.length ) {
+				return;
+			}
+
+			var first = focusable[ 0 ];
+			var last = focusable[ focusable.length - 1 ];
+
+			if ( event.shiftKey && document.activeElement === first ) {
+				event.preventDefault();
+				last.focus();
+			} else if ( ! event.shiftKey && document.activeElement === last ) {
+				event.preventDefault();
+				first.focus();
+			}
+		}
+
+		function body( item ) {
+			var html = '';
+
+			html += '<div class="rh-qv__media">';
+			html += item.image_full
+				? '<img src="' + esc( item.image_full ) + '" alt="' + esc( item.title ) + '" />'
+				: '<span class="rh-card__placeholder" aria-hidden="true"></span>';
+			html += '</div>';
+
+			html += '<div class="rh-qv__info">';
+
+			if ( item.brand ) {
+				html += '<span class="rh-card__brand">' + esc( item.brand ) + '</span>';
+			}
+
+			html += '<h2 class="rh-qv__title" id="rh-qv-title">' + esc( item.title ) + '</h2>';
+
+			if ( item.rating > 0 ) {
+				html += '<div class="rh-qv__score">'
+					+ '<div class="rh-qv__meter"><span class="rh-qv__meter-fill" data-fill="'
+					+ esc( ( item.rating / 5 ) * 100 ) + '"></span></div>'
+					+ '<strong>' + esc( item.rating.toFixed( 1 ) ) + '</strong><span>/ 5</span>'
+					+ '</div>';
+			}
+
+			if ( item.cbd_mg > 0 || item.thc_pct > 0 || item.lab_tested ) {
+				html += '<dl class="rh-card__spec">';
+
+				if ( item.cbd_mg > 0 ) {
+					html += '<div><dt>CBD</dt><dd>' + esc( item.cbd_mg ) + ' mg</dd></div>';
+				}
+
+				if ( item.thc_pct > 0 ) {
+					html += '<div><dt>THC</dt><dd>' + esc( item.thc_pct ) + '%</dd></div>';
+				}
+
+				if ( item.lab_tested ) {
+					html += '<div class="rh-card__verified"><dt>' + esc( i18n.labLabel || 'Lab' ) + '</dt>'
+						+ '<dd>' + esc( i18n.verified || 'Verified' ) + '</dd></div>';
+				}
+
+				html += '</dl>';
+			}
+
+			if ( item.concerns && item.concerns.length ) {
+				html += '<p class="rh-qv__tags">' + item.concerns.map( function ( tag ) {
+					return '<span>' + esc( tag ) + '</span>';
+				} ).join( '' ) + '</p>';
+			}
+
+			if ( item.excerpt ) {
+				html += '<p class="rh-qv__excerpt">' + esc( item.excerpt ) + '</p>';
+			}
+
+			if ( item.regions && item.regions.length ) {
+				html += '<p class="rh-card__region">' + esc( item.regions.join( ' · ' ) ) + '</p>';
+			}
+
+			html += '<div class="rh-qv__actions">';
+
+			if ( item.price > 0 ) {
+				html += '<span class="rh-card__price">';
+				if ( item.price_was > item.price ) {
+					html += '<s>' + esc( money( item.price_was, item.currency ) ) + '</s>';
+				}
+				html += '<strong>' + esc( money( item.price, item.currency ) ) + '</strong></span>';
+			}
+
+			if ( item.has_offer ) {
+				html += '<a class="rh-card__cta" href="' + esc( item.offer_url )
+					+ '" rel="nofollow sponsored noopener" target="_blank">'
+					+ esc( i18n.viewOffer || 'View offer' ) + '</a>';
+			}
+
+			html += '</div>';
+
+			if ( item.discount_code ) {
+				html += '<button type="button" class="rh-card__code" data-rh-copy="' + esc( item.discount_code ) + '">'
+					+ 'Code <code>' + esc( item.discount_code ) + '</code></button>';
+			}
+
+			html += '<a class="rh-qv__full" href="' + esc( item.permalink ) + '">'
+				+ esc( i18n.readReview || 'Read full review' ) + '</a>';
+
+			html += '</div>';
+
+			return html;
+		}
+
+		function open( id, trigger ) {
+			lastFocus = trigger || document.activeElement;
+
+			overlay = document.createElement( 'div' );
+			overlay.className = 'rh-qv';
+			overlay.innerHTML =
+				'<div class="rh-qv__backdrop" data-rh-qv-close></div>' +
+				'<div class="rh-qv__panel" role="dialog" aria-modal="true" aria-labelledby="rh-qv-title">' +
+				'<button type="button" class="rh-qv__close" data-rh-qv-close aria-label="Close">&times;</button>' +
+				'<div class="rh-qv__content"><p class="rh-qv__loading">' + esc( i18n.loading || 'Loading…' ) + '</p></div>' +
+				'</div>';
+
+			document.body.appendChild( overlay );
+			document.documentElement.style.overflow = 'hidden';
+			document.addEventListener( 'keydown', onKey );
+
+			overlay.querySelectorAll( '[data-rh-qv-close]' ).forEach( function ( el ) {
+				el.addEventListener( 'click', close );
+			} );
+
+			requestAnimationFrame( function () {
+				if ( overlay ) {
+					overlay.classList.add( 'is-open' );
+				}
+			} );
+
+			request( '/item', { id: id } ).then( function ( item ) {
+				if ( ! overlay ) {
+					return;
+				}
+
+				overlay.querySelector( '.rh-qv__content' ).innerHTML = body( item );
+				overlay.querySelector( '.rh-qv__close' ).focus();
+
+				// Animate the score meter once the panel has painted.
+				var fill = overlay.querySelector( '.rh-qv__meter-fill' );
+
+				if ( fill ) {
+					requestAnimationFrame( function () {
+						fill.style.width = fill.dataset.fill + '%';
+					} );
+				}
+			} ).catch( function () {
+				if ( overlay ) {
+					overlay.querySelector( '.rh-qv__content' ).innerHTML =
+						'<p class="rh-qv__loading">' + esc( i18n.noResults || 'Could not load this item.' ) + '</p>';
+				}
+			} );
+		}
+
+		return { open: open, close: close };
+	} )();
+
+	function initQuickView() {
+		document.addEventListener( 'click', function ( event ) {
+			var trigger = event.target.closest( '[data-rh-quickview]' );
+
+			if ( ! trigger ) {
+				return;
+			}
+
+			event.preventDefault();
+			quickView.open( trigger.dataset.rhQuickview, trigger );
+		} );
+	}
+
 	/* ------------------------------------------------------------- grid -- */
+
+	function skeletons( count ) {
+		var one = '<div class="rh-skeleton" aria-hidden="true">'
+			+ '<div class="rh-skeleton__media"></div>'
+			+ '<div class="rh-skeleton__line rh-skeleton__line--sm"></div>'
+			+ '<div class="rh-skeleton__line"></div>'
+			+ '<div class="rh-skeleton__line rh-skeleton__line--sm"></div>'
+			+ '</div>';
+
+		return new Array( count ).join( '|' ).split( '|' ).map( function () {
+			return one;
+		} ).join( '' );
+	}
 
 	function initGrid( root ) {
 		var results = root.querySelector( '[data-rh-results]' );
@@ -154,8 +448,168 @@
 			);
 		}
 
+		var pills = document.createElement( 'div' );
+		pills.className = 'rh-pills';
+		pills.hidden = true;
+		root.querySelector( '.rh-toolbar' ).insertAdjacentElement( 'afterend', pills );
+
+		/**
+		 * Human-readable label for an active filter, read from the control that
+		 * set it so the pill always matches what the visitor chose.
+		 */
+		function activeFilters() {
+			var active = [];
+
+			state.category.forEach( function ( slug ) {
+				var chip = document.querySelector(
+					'[data-rh-categories][data-target="' + root.id + '"] [data-slug="' + slug + '"]'
+				);
+
+				active.push( {
+					key: 'category',
+					value: slug,
+					label: chip ? chip.querySelector( '.rh-category__name' ).textContent.trim() : slug
+				} );
+			} );
+
+			controls.forEach( function ( control ) {
+				var key = control.dataset.rhFilter;
+
+				if ( control.type === 'checkbox' ) {
+					if ( control.checked ) {
+						active.push( { key: key, value: 1, label: control.parentElement.textContent.trim() } );
+					}
+
+					return;
+				}
+
+				// "0" is the any-score default, and is a truthy string.
+				if ( key === 'orderby' || ! control.value || control.value === '0' ) {
+					return;
+				}
+
+				active.push( {
+					key: key,
+					value: control.value,
+					label: control.options[ control.selectedIndex ].textContent.trim()
+				} );
+			} );
+
+			return active;
+		}
+
+		function renderPills() {
+			var active = activeFilters();
+
+			pills.hidden = ! active.length;
+			pills.innerHTML = active.map( function ( item ) {
+				return '<button type="button" class="rh-pill" data-key="' + esc( item.key ) + '" data-value="'
+					+ esc( item.value ) + '">' + esc( item.label )
+					+ '<span aria-hidden="true">&times;</span>'
+					+ '<span class="screen-reader-text"> (remove filter)</span></button>';
+			} ).join( '' );
+		}
+
+		pills.addEventListener( 'click', function ( event ) {
+			var pill = event.target.closest( '.rh-pill' );
+
+			if ( ! pill ) {
+				return;
+			}
+
+			var key = pill.dataset.key;
+
+			if ( key === 'category' ) {
+				state.category = state.category.filter( function ( slug ) {
+					return slug !== pill.dataset.value;
+				} );
+
+				var chip = document.querySelector(
+					'[data-rh-categories][data-target="' + root.id + '"] [data-slug="' + pill.dataset.value + '"]'
+				);
+
+				if ( chip ) {
+					chip.setAttribute( 'aria-pressed', 'false' );
+				}
+			} else {
+				var control = root.querySelector( '[data-rh-filter="' + key + '"]' );
+
+				if ( control ) {
+					if ( control.type === 'checkbox' ) {
+						control.checked = false;
+					} else {
+						control.selectedIndex = 0;
+					}
+				}
+
+				state[ key ] = '';
+			}
+
+			refresh();
+		} );
+
+		/**
+		 * Mirror filter state into the URL so a filtered view can be shared and
+		 * the back button steps through filter changes.
+		 */
+		function syncUrl( replace ) {
+			if ( ! window.history || ! window.history.pushState ) {
+				return;
+			}
+
+			var params = new URLSearchParams( window.location.search );
+
+			[ 'category', 'concern', 'region', 'min_rating', 'lab_tested', 'orderby' ].forEach( function ( key ) {
+				var value = state[ key ];
+
+				if ( Array.isArray( value ) ) {
+					value = value.join( ',' );
+				}
+
+				if ( ! value || value === '0' || ( key === 'orderby' && value === 'rating' ) ) {
+					params.delete( key );
+				} else {
+					params.set( key, value );
+				}
+			} );
+
+			var query = params.toString();
+			var url = window.location.pathname + ( query ? '?' + query : '' );
+
+			window.history[ replace ? 'replaceState' : 'pushState' ]( { rh: state }, '', url );
+		}
+
+		function applyFromUrl() {
+			var params = new URLSearchParams( window.location.search );
+
+			state.category = ( params.get( 'category' ) || '' ).split( ',' ).filter( Boolean );
+
+			controls.forEach( function ( control ) {
+				var key = control.dataset.rhFilter;
+				var value = params.get( key );
+
+				if ( control.type === 'checkbox' ) {
+					control.checked = value === '1';
+					state[ key ] = control.checked ? 1 : '';
+				} else {
+					control.value = value || ( key === 'orderby' ? 'rating' : '' );
+					state[ key ] = control.value;
+				}
+			} );
+
+			document.querySelectorAll(
+				'[data-rh-categories][data-target="' + root.id + '"] .rh-category'
+			).forEach( function ( chip ) {
+				chip.setAttribute(
+					'aria-pressed',
+					state.category.indexOf( chip.dataset.slug ) !== -1 ? 'true' : 'false'
+				);
+			} );
+		}
+
 		function render( payload ) {
 			results.setAttribute( 'aria-busy', 'false' );
+			results.classList.remove( 'is-loading' );
 
 			if ( ! payload.items.length ) {
 				results.innerHTML = '';
@@ -163,25 +617,58 @@
 			} else {
 				empty.hidden = true;
 				results.innerHTML = payload.items.map( cardHtml ).join( '' );
+				observeReveal( results );
 			}
 
 			if ( countLabel ) {
 				countLabel.textContent = payload.total === 1 ? '1 result' : payload.total + ' results';
+				countLabel.classList.remove( 'is-pulsing' );
+				// Restart the pulse so the changed count is noticeable.
+				void countLabel.offsetWidth;
+				countLabel.classList.add( 'is-pulsing' );
 			}
 
 			if ( clearBtn ) {
 				clearBtn.hidden = ! isFiltered();
 			}
+
+			renderPills();
 		}
 
-		function refresh() {
+		function refresh( skipUrl ) {
 			results.setAttribute( 'aria-busy', 'true' );
+			results.classList.add( 'is-loading' );
+
+			var placeholders = Math.min( 8, Math.max( 3, results.children.length || 6 ) );
+			results.innerHTML = skeletons( placeholders + 1 );
+			empty.hidden = true;
+
+			if ( ! skipUrl ) {
+				syncUrl( false );
+			}
 
 			request( '/items', state )
 				.then( render )
 				.catch( function () {
 					results.setAttribute( 'aria-busy', 'false' );
+					results.classList.remove( 'is-loading' );
+					results.innerHTML = '';
+					empty.hidden = false;
 				} );
+		}
+
+		window.addEventListener( 'popstate', function () {
+			applyFromUrl();
+			refresh( true );
+		} );
+
+		// Restore a filtered view when the page is opened with query params.
+		if ( window.location.search ) {
+			applyFromUrl();
+
+			if ( isFiltered() ) {
+				refresh( true );
+			}
 		}
 
 		controls.forEach( function ( control ) {
@@ -579,6 +1066,58 @@
 		} );
 	}
 
+	/**
+	 * Floating finder trigger. The guided finder is the highest-converting
+	 * element on the page, so it stays reachable instead of living only at the
+	 * bottom of the homepage.
+	 */
+	function initStickyFinder() {
+		var finder = document.querySelector( '[data-rh-finder]' );
+
+		if ( ! finder || document.querySelector( '[data-rh-sticky-finder]' ) ) {
+			return;
+		}
+
+		var button = document.createElement( 'button' );
+		button.type = 'button';
+		button.className = 'rh-sticky-finder';
+		button.setAttribute( 'data-rh-sticky-finder', '' );
+		button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">'
+			+ '<circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/>'
+			+ '<path d="M20 20l-3.5-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'
+			+ '</svg><span>' + esc( i18n.findProduct || 'Find your product' ) + '</span>';
+
+		document.body.appendChild( button );
+
+		button.addEventListener( 'click', function () {
+			finder.scrollIntoView( { behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' } );
+
+			var first = finder.querySelector( '.rh-finder__option' );
+
+			if ( first ) {
+				setTimeout( function () {
+					first.focus();
+				}, reduceMotion ? 0 : 500 );
+			}
+
+			finder.classList.add( 'is-flagged' );
+			setTimeout( function () {
+				finder.classList.remove( 'is-flagged' );
+			}, 1400 );
+		} );
+
+		// Only show it once the finder has scrolled out of view.
+		if ( typeof IntersectionObserver !== 'undefined' ) {
+			new IntersectionObserver( function ( entries ) {
+				entries.forEach( function ( entry ) {
+					button.classList.toggle( 'is-visible', ! entry.isIntersecting );
+				} );
+			}, { threshold: 0.2 } ).observe( finder );
+		} else {
+			button.classList.add( 'is-visible' );
+		}
+	}
+
 	function boot() {
 		document.querySelectorAll( '[data-rh-grid]' ).forEach( initGrid );
 		document.querySelectorAll( '[data-rh-categories]' ).forEach( initCategories );
@@ -588,13 +1127,12 @@
 
 		initCounters();
 		initCopyCodes();
-
-		if ( typeof window.AOS !== 'undefined' && ! reduceMotion ) {
-			window.AOS.init( { duration: 500, easing: 'ease-out', once: true, offset: 40 } );
-		}
+		initQuickView();
+		initStickyFinder();
+		observeReveal( document );
 
 		if ( typeof window.GLightbox !== 'undefined' ) {
-			window.GLightbox( { selector: '.rh-lightbox' } );
+			window.GLightbox( { selector: '.rh-lightbox', touchNavigation: true, loop: true } );
 		}
 	}
 
