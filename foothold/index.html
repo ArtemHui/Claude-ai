@@ -1,0 +1,744 @@
+<title>Foothold</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Source+Sans+3:wght@400;500;600;700&display=swap">
+
+<style>
+:root {
+  --paper: #f4f4f1;
+  --surface: #fffefc;
+  --sunk: #eceae5;
+  --ink: #1b2422;
+  --ink-soft: #3f4c49;
+  --muted: #61706c;
+  --hairline: #ddd9d2;
+  --hairline-strong: #c4bfb6;
+
+  --steady: #2d6a58;
+  --steady-soft: #e6efeb;
+  --warm: #9a6520;
+  --warm-soft: #f6efe3;
+  --warn: #a83a2c;
+  --warn-soft: #f8eae7;
+
+  --display: "Newsreader", Georgia, "Times New Roman", serif;
+  --body: "Source Sans 3", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --measure: 64ch;
+  --ease: cubic-bezier(0.2, 0.6, 0.3, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #141a19;
+    --surface: #1c2523;
+    --sunk: #232d2b;
+    --ink: #eef2f0;
+    --ink-soft: #c6d0cd;
+    --muted: #9aa8a4;
+    --hairline: #2f3b39;
+    --hairline-strong: #43514e;
+
+    --steady: #6ec2a8;
+    --steady-soft: #17302a;
+    --warm: #d7a45f;
+    --warm-soft: #2c2519;
+    --warn: #ef8a78;
+    --warn-soft: #321e1b;
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper: #141a19;
+  --surface: #1c2523;
+  --sunk: #232d2b;
+  --ink: #eef2f0;
+  --ink-soft: #c6d0cd;
+  --muted: #9aa8a4;
+  --hairline: #2f3b39;
+  --hairline-strong: #43514e;
+
+  --steady: #6ec2a8;
+  --steady-soft: #17302a;
+  --warm: #d7a45f;
+  --warm-soft: #2c2519;
+  --warn: #ef8a78;
+  --warn-soft: #321e1b;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 18px;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: 1080px; margin: 0 auto; padding-inline: 20px; }
+.measure { max-width: var(--measure); }
+
+h1, h2, h3 {
+  font-family: var(--display);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  margin: 0;
+}
+
+h1 { font-size: clamp(2.125rem, 5.5vw, 3.5rem); }
+h2 { font-size: clamp(1.625rem, 3.8vw, 2.375rem); }
+h3 { font-family: var(--body); font-size: 1.125rem; font-weight: 600; letter-spacing: 0; line-height: 1.35; }
+
+p { margin: 0; }
+a { color: var(--steady); }
+
+.eyebrow {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+:where(a, button):focus-visible {
+  outline: 2px solid var(--steady);
+  outline-offset: 3px;
+}
+
+/* ------------------------------------------------------------- header -- */
+
+.masthead { border-bottom: 1px solid var(--hairline); background: var(--surface); }
+
+.masthead__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding-block: 15px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--display);
+  font-size: 1.3125rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.brand svg { width: 24px; height: 24px; flex: none; color: var(--steady); }
+
+.masthead__tag { font-size: 0.875rem; color: var(--muted); text-align: right; }
+
+/* --------------------------------------------------------------- hero -- */
+
+.hero { padding-block: clamp(44px, 7vw, 76px) clamp(36px, 5vw, 56px); }
+
+.hero h1 { max-width: 20ch; }
+
+.hero__lede {
+  margin-top: 22px;
+  font-size: 1.3125rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  max-width: 46ch;
+}
+
+.hero__actions { margin-top: 30px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 14px 24px;
+  background: var(--steady);
+  color: #fff;
+  border: 1px solid var(--steady);
+  border-radius: 3px;
+  font: inherit;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 160ms var(--ease);
+}
+
+:root[data-theme="dark"] .cta,
+@media (prefers-color-scheme: dark) { }
+
+.cta:hover { opacity: 0.88; }
+
+.cta--quiet {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--hairline-strong);
+}
+
+.hero__reassure {
+  margin-top: 26px;
+  padding-left: 16px;
+  border-left: 3px solid var(--warm);
+  font-size: 1rem;
+  color: var(--ink-soft);
+  max-width: 52ch;
+}
+
+/* ------------------------------------------------------------- triage -- */
+
+.triage {
+  background: var(--surface);
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+  padding-block: clamp(40px, 6vw, 68px);
+}
+
+.triage__head { margin-bottom: 26px; }
+.triage__head p { margin-top: 12px; color: var(--ink-soft); max-width: var(--measure); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.chip {
+  padding: 11px 17px;
+  background: var(--paper);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 999px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 160ms var(--ease), border-color 160ms var(--ease), color 160ms var(--ease);
+}
+
+.chip:hover { border-color: var(--steady); }
+
+.chip[aria-pressed="true"] {
+  background: var(--steady);
+  border-color: var(--steady);
+  color: #fff;
+}
+
+.advice {
+  margin-top: 26px;
+  background: var(--sunk);
+  border: 1px solid var(--hairline);
+  border-left: 3px solid var(--steady);
+  border-radius: 3px;
+  padding: clamp(20px, 3vw, 30px);
+}
+
+.advice__placeholder { color: var(--muted); font-size: 1rem; }
+
+.advice h3 { margin-bottom: 6px; }
+
+.advice__window {
+  display: inline-block;
+  margin-bottom: 16px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--warn);
+  background: var(--warn-soft);
+  border-radius: 3px;
+  padding: 3px 9px;
+}
+
+.advice ol { margin: 0; padding-left: 20px; display: grid; gap: 11px; }
+.advice li { font-size: 1rem; color: var(--ink-soft); line-height: 1.55; }
+.advice li strong { color: var(--ink); font-weight: 600; }
+
+.advice__foot {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--hairline-strong);
+  font-size: 0.9375rem;
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------ section -- */
+
+section { padding-block: clamp(50px, 7vw, 86px); }
+.section__head { margin-bottom: 34px; }
+.section__head p { margin-top: 14px; color: var(--ink-soft); max-width: var(--measure); }
+
+/* --------------------------------------------------------------- why -- */
+
+/* Four items: two columns fill both rows; three strands the last one. */
+.why { display: grid; grid-template-columns: 1fr; gap: 30px; }
+
+@media (min-width: 700px) {
+  .why { grid-template-columns: repeat(2, 1fr); gap: 34px 48px; }
+}
+.why article { display: flex; flex-direction: column; gap: 9px; }
+.why p { font-size: 1rem; color: var(--ink-soft); }
+.why h3 { color: var(--ink); }
+
+.why__mark {
+  width: 30px; height: 3px; background: var(--warm); border-radius: 2px; margin-bottom: 4px;
+}
+
+/* ------------------------------------------------------------- offers -- */
+
+.offer {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1px;
+  background: var(--hairline);
+  border: 1px solid var(--hairline);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+@media (min-width: 720px) {
+  .offer { grid-template-columns: repeat(2, 1fr); }
+}
+
+.offer article { background: var(--surface); padding: 28px 24px; display: flex; flex-direction: column; gap: 10px; }
+.offer svg { width: 24px; height: 24px; color: var(--steady); }
+.offer p { font-size: 0.9375rem; color: var(--ink-soft); }
+
+/* --------------------------------------------------------- guardrail -- */
+
+.guard {
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
+  border-radius: 3px;
+  padding: clamp(24px, 4vw, 40px);
+}
+
+.guard h2 { color: var(--warn); }
+.guard p { margin-top: 14px; color: var(--ink-soft); max-width: var(--measure); }
+.guard strong { color: var(--ink); }
+
+.guard__list { margin: 22px 0 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+
+.guard__list li {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 12px;
+  font-size: 1rem;
+  color: var(--ink-soft);
+  align-items: start;
+}
+
+.guard__list svg { width: 20px; height: 20px; color: var(--warn); margin-top: 3px; }
+
+/* ------------------------------------------------------------ honest -- */
+
+.honest {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(248px, 1fr));
+  gap: 26px;
+  margin-top: 8px;
+}
+
+.honest article {
+  padding: 22px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.honest span {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.honest p { font-size: 0.9375rem; color: var(--ink-soft); }
+.honest--can span { color: var(--steady); }
+.honest--cant span { color: var(--muted); }
+
+/* -------------------------------------------------------- placeholder -- */
+
+.placeholder {
+  border: 1px dashed var(--hairline-strong);
+  border-radius: 3px;
+  padding: 24px;
+  background: repeating-linear-gradient(-45deg, transparent 0 8px, rgba(130,140,135,0.05) 8px 16px);
+}
+
+.placeholder__tag {
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 2px;
+  padding: 3px 8px;
+  margin-bottom: 12px;
+}
+
+.placeholder p { font-size: 0.9375rem; color: var(--muted); max-width: var(--measure); }
+
+/* ------------------------------------------------------------- footer -- */
+
+footer { border-top: 1px solid var(--hairline); background: var(--surface); padding-block: 38px 52px; }
+.footer__grid { display: flex; flex-wrap: wrap; gap: 26px; justify-content: space-between; }
+footer p { font-size: 0.875rem; color: var(--muted); max-width: 44ch; }
+
+@media (max-width: 560px) {
+  body { font-size: 17px; }
+  .masthead__tag { display: none; }
+  .hero__actions .cta { width: 100%; justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 1ms !important; animation-duration: 1ms !important; }
+}
+</style>
+
+<header class="masthead">
+  <div class="wrap masthead__inner">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M4 20h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+        <path d="M7 20V11l5-4 5 4v9" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+        <path d="M12 20v-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      </svg>
+      Foothold
+    </div>
+    <div class="masthead__tag">Practical help after a scam</div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <span class="eyebrow">You are in the right place</span>
+    <h1 style="margin-top:14px">If it just happened, start here. Nothing about this is your fault.</h1>
+    <p class="hero__lede">We help people who have been scammed work out what to do next &mdash; in what order, and quickly, while some of it can still be changed.</p>
+
+    <div class="hero__actions">
+      <a class="cta" href="#triage">What has happened to me?</a>
+      <a class="cta cta--quiet" href="#contact">Talk to someone</a>
+    </div>
+
+    <p class="hero__reassure">Scams work on careful, intelligent people every day. They are run by organised teams using scripts refined across thousands of attempts, and they are designed to catch you at a busy, distracted, or frightening moment. Being taken in says nothing about your judgement.</p>
+  </div>
+
+  <div class="triage" id="triage">
+    <div class="wrap">
+      <div class="triage__head">
+        <h2>What happened?</h2>
+        <p>Choose the closest match. The first steps are different depending on how the money moved or what was taken &mdash; and some routes have a short window where things can still be stopped.</p>
+      </div>
+
+      <div class="chips" id="chips" role="group" aria-label="Type of scam"></div>
+
+      <div class="advice" id="advice" aria-live="polite">
+        <p class="advice__placeholder" id="advice-idle">Pick an option above and the immediate steps appear here.</p>
+        <div id="advice-body" hidden></div>
+      </div>
+    </div>
+  </div>
+
+  <section class="wrap">
+    <div class="section__head">
+      <span class="eyebrow">Why this happens to capable people</span>
+      <h2 style="margin-top:12px">The shame is the scam&rsquo;s last weapon</h2>
+      <p>Most people never report what happened, and the reason is almost always embarrassment. That silence is useful to the people who did it &mdash; it buys them time and keeps them working. Understanding the mechanism makes it easier to speak up.</p>
+    </div>
+
+    <div class="why">
+      <article>
+        <span class="why__mark"></span>
+        <h3>It is a profession, not a trick</h3>
+        <p>The person on the phone has run this call hundreds of times, with a script tested and refined on real responses. You met their best version on your first attempt.</p>
+      </article>
+
+      <article>
+        <span class="why__mark"></span>
+        <h3>Fear narrows attention</h3>
+        <p>Being told your money is at risk produces a genuine stress response. Under it, people stop evaluating and start complying &mdash; which is precisely what the urgency is engineered to cause.</p>
+      </article>
+
+      <article>
+        <span class="why__mark"></span>
+        <h3>They arrive already knowing things</h3>
+        <p>A name, an address, the last four digits of a card &mdash; bought from a breach or pieced together. Accurate detail is used to buy trust before the request ever arrives.</p>
+      </article>
+
+      <article>
+        <span class="why__mark"></span>
+        <h3>You were isolated on purpose</h3>
+        <p>Instructions to keep it confidential, stay on the line, or not trouble anyone exist to remove the one thing that reliably stops these: another person&rsquo;s second opinion.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="wrap" style="padding-top:0">
+    <div class="guard">
+      <span class="eyebrow" style="color:var(--warn)">Read this before you pay anyone</span>
+      <h2 style="margin-top:12px">If someone offers to get your money back for a fee, that is a second scam</h2>
+      <p>People who have just been scammed are the most targeted group there is, because the fraudsters know exactly who is desperate and they often hold the list. <strong>Recovery fraud is one of the most common follow-up attacks.</strong> It is worth knowing the shape of it before anyone contacts you.</p>
+
+      <ul class="guard__list">
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 2.5 20h19L12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 10v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="17" r="1" fill="currentColor"/></svg>
+          <span>An upfront fee, &ldquo;release payment&rdquo;, tax or deposit required before any money comes back.</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 2.5 20h19L12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 10v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="17" r="1" fill="currentColor"/></svg>
+          <span>A guarantee that funds will be recovered. Nobody legitimate can promise that, including us.</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 2.5 20h19L12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 10v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="17" r="1" fill="currentColor"/></svg>
+          <span>An unsolicited approach claiming to be a recovery agent, a regulator, or an investigator who has &ldquo;located your funds&rdquo;.</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 2.5 20h19L12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 10v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="17" r="1" fill="currentColor"/></svg>
+          <span>A request for remote access to your device, or for banking passwords and card details, to &ldquo;process the refund&rdquo;.</span>
+        </li>
+      </ul>
+
+      <p style="margin-top:20px"><strong>Reporting to your bank and to the police costs nothing.</strong> Those are the routes that actually recover money where recovery is possible.</p>
+    </div>
+  </section>
+
+  <section class="wrap" style="padding-top:0">
+    <div class="section__head">
+      <span class="eyebrow">How we help</span>
+      <h2 style="margin-top:12px">The practical part, done with you</h2>
+      <p>Most of what needs doing in the first days is admin performed under stress, in an unfamiliar vocabulary, with deadlines nobody tells you about. That is the part we take on.</p>
+    </div>
+
+    <div class="offer">
+      <article>
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <h3>Work out the order</h3>
+        <p>What to do first, what can wait, and which windows are closing. Acting in the right sequence materially changes what can be stopped.</p>
+      </article>
+
+      <article>
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 4h10l3 4v12H4V8l3-4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 13h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <h3>Build the case file</h3>
+        <p>Dates, amounts, transaction references, screenshots and correspondence, assembled the way banks and investigators need to receive it.</p>
+      </article>
+
+      <article>
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16v12H4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m4 7 8 6 8-6" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        <h3>Make the claim properly</h3>
+        <p>Reporting to the bank, the card issuer, the platform and the police &mdash; using the right terms, so a claim is not refused for the wrong reason.</p>
+      </article>
+
+      <article>
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s-7-4.3-7-9.4A4.1 4.1 0 0 1 12 8a4.1 4.1 0 0 1 7 3.6c0 5.1-7 9.4-7 9.4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        <h3>Afterwards</h3>
+        <p>Closing off the exposure that remains &mdash; accounts, credentials, identity records &mdash; and dealing with the part nobody warns you about, which is how it feels.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="wrap" style="padding-top:0">
+    <div class="section__head">
+      <span class="eyebrow">Straight answers</span>
+      <h2 style="margin-top:12px">What we can and cannot do</h2>
+      <p>Said plainly, because the alternative is the language the people who scammed you were using.</p>
+    </div>
+
+    <div class="honest">
+      <article class="honest--can">
+        <span>We can</span>
+        <p>Tell you what to do first and why. Help you report to every party that needs to know. Assemble evidence properly. Explain your rights on a disputed payment. Stay with you through the follow-up.</p>
+      </article>
+      <article class="honest--cant">
+        <span>We cannot</span>
+        <p>Promise your money back. Reverse a completed transfer ourselves. Trace a criminal or take legal action against them. Give you legal or financial advice &mdash; where that is needed, we say so and point you to it.</p>
+      </article>
+      <article class="honest--can">
+        <span>We never</span>
+        <p>Contact you out of the blue claiming to have found your funds. Ask for a fee to release money. Ask for a password, a PIN, a card number, or remote access to any device you own.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="wrap" style="padding-top:0" id="contact">
+    <div class="placeholder">
+      <span class="placeholder__tag">Placeholder &mdash; your real details needed</span>
+      <h3 style="margin-bottom:10px">Contact routes, hours, registration and fees</h3>
+      <p>Left empty on purpose. This is a page whose entire subject is fraud, so it must not carry invented phone numbers, made-up accreditations, fabricated case counts or borrowed logos. Send me the real contact routes, your hours, how charging works, and any registration or professional body, and this becomes the section that converts.</p>
+      <p style="margin-top:12px">One recommendation: state your fee model here in plain terms, even if the answer is simply that a first conversation is free. Visitors arriving on this page have just lost money and are primed to suspect a second trap. Ambiguity about cost is the fastest way to lose them.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap footer__grid">
+    <div>
+      <div class="brand" style="font-size:1.0625rem">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M4 20h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          <path d="M7 20V11l5-4 5 4v9" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+          <path d="M12 20v-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+        </svg>
+        Foothold
+      </div>
+      <p style="margin-top:12px">General information, not legal or financial advice. Where money has moved, contact your bank directly and report it to your national fraud reporting service &mdash; both are free and neither requires us.</p>
+    </div>
+    <p>We will never phone you unprompted, ask for a password or PIN, request remote access to your device, or charge a fee to release recovered money.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  var ROUTES = [
+    {
+      id: 'transfer',
+      label: 'I transferred money from my bank',
+      window: 'Call your bank now — speed matters most here',
+      steps: [
+        '<strong>Phone your bank immediately</strong>, using the number on your card or their official app — not any number you were given. Ask them to attempt a recall of the payment and to freeze further transfers.',
+        '<strong>Say the words “authorised push payment scam”.</strong> It is the term banks use for a payment you were tricked into making, and it routes your case to the right team.',
+        '<strong>Do not send anything further</strong>, even if you are told the first payment failed or a fee is needed to release it. That instruction is part of the scam.',
+        '<strong>Report it to the police or your national fraud reporting service</strong> and keep the reference number. Banks frequently ask for it.',
+        '<strong>Write down the timeline while it is fresh</strong> — times, amounts, account details you were given, and what you were told.'
+      ],
+      foot: 'Money can sometimes be held at the receiving bank if the alarm is raised quickly, which is why this call comes before everything else.'
+    },
+    {
+      id: 'card',
+      label: 'I paid by debit or credit card',
+      window: 'Contact the card issuer today',
+      steps: [
+        '<strong>Call the number on the back of the card</strong> and report the transaction as fraudulent or disputed. Ask them to block the card and reissue it.',
+        '<strong>Ask specifically about a chargeback</strong>, and on a credit card ask whether purchase protection applies. These are established routes with real success rates.',
+        '<strong>Do not cancel the card before you have reported the transaction</strong> unless told to — the disputed payment still needs to be raised against it.',
+        '<strong>Check for further attempts</strong> on the statement, including small test amounts, and report those too.',
+        '<strong>Keep every receipt, message and screenshot.</strong> Card disputes are decided largely on evidence.'
+      ],
+      foot: 'Card payments carry more protection than transfers. This is one of the better positions to be in.'
+    },
+    {
+      id: 'gift',
+      label: 'I bought gift cards or vouchers',
+      window: 'Contact the retailer right away — unspent balances can sometimes be frozen',
+      steps: [
+        '<strong>Contact the company that issued the card</strong> (the retailer, not the shop that sold it) and tell them the codes were obtained by fraud.',
+        '<strong>Have the cards, the receipts and the codes ready.</strong> Funds not yet spent can occasionally be frozen, and that chance falls away by the hour.',
+        '<strong>Stop all contact with the person who asked for them.</strong> No legitimate body — no tax office, police force, utility or employer — is ever paid in gift cards.',
+        '<strong>Report it</strong> to the police or your national fraud reporting service, and tell the shop where you bought them; many have fraud procedures.',
+        '<strong>Expect a follow-up approach</strong> offering to recover the money. Treat any such contact as a further scam.'
+      ],
+      foot: 'The request for gift cards is itself conclusive proof of fraud. Nothing legitimate is ever settled this way.'
+    },
+    {
+      id: 'crypto',
+      label: 'I sent cryptocurrency',
+      window: 'Report to the exchange and preserve every record',
+      steps: [
+        '<strong>Notify the exchange or wallet provider you sent from</strong>, and the receiving platform if you can identify it. Some can freeze accounts still holding funds.',
+        '<strong>Save the transaction hashes, wallet addresses, dates and amounts.</strong> These are the evidence, and they are public and permanent.',
+        '<strong>Send nothing more.</strong> Requests for a further payment to unlock, release or convert a balance are the standard continuation of this scam.',
+        '<strong>Report it</strong> to your national fraud reporting service and, where investment was involved, to the financial regulator.',
+        '<strong>Be sceptical of “blockchain recovery” services.</strong> Almost all are a second fraud aimed at the same victims.'
+      ],
+      foot: 'Be prepared for a hard answer: crypto transfers are usually irreversible. Reporting still matters, because it feeds investigations and can freeze funds held on exchanges.'
+    },
+    {
+      id: 'access',
+      label: 'I let someone into my computer or phone',
+      window: 'Disconnect the device now, then work from a different one',
+      steps: [
+        '<strong>Disconnect that device from the internet</strong> and shut it down. Do not use it for banking or password changes.',
+        '<strong>From a different device</strong>, change the passwords for your email first, then banking, then everything reusing that password. Email comes first because it resets everything else.',
+        '<strong>Turn on two-factor authentication</strong> everywhere it is offered, starting with email and banking.',
+        '<strong>Call your bank</strong> and tell them a third party had access to your device, even if you saw no payment. Ask them to watch the account.',
+        '<strong>Have the device checked</strong> before it goes back into use, and remove any remote-access software that was installed during the call.'
+      ],
+      foot: 'Remote access sessions are often used to stage fake screens showing refunds or errors. What you were shown on that screen may not have been real.'
+    },
+    {
+      id: 'data',
+      label: 'They got my personal details',
+      window: 'Lock down accounts and watch for identity misuse',
+      steps: [
+        '<strong>Change the password on your email account first</strong>, then any account sharing that password, and enable two-factor authentication.',
+        '<strong>Contact your bank</strong> to flag the risk, even if nothing has moved yet, so unusual activity is challenged.',
+        '<strong>Place a notice or freeze with the credit reference agencies</strong> so credit cannot easily be taken out in your name.',
+        '<strong>Watch for accounts you did not open</strong> and post that stops arriving unexpectedly, which can indicate redirected mail.',
+        '<strong>Keep a record of what was disclosed</strong> and when. It matters if an account is later opened fraudulently.'
+      ],
+      foot: 'Nothing may happen for months. The checks above are what catch it early if it does.'
+    },
+    {
+      id: 'romance',
+      label: 'It was someone I trusted or was close to',
+      window: 'Take your time — but stop any further payments',
+      steps: [
+        '<strong>Stop sending money</strong>, including anything already promised. Requests escalate by design, and there is no final payment.',
+        '<strong>Do not confront them first.</strong> Save the messages, profiles, photographs, payment records and account details before anything can be deleted.',
+        '<strong>Tell one person you trust.</strong> This is the hardest step and the most valuable one. Isolation is how it kept working.',
+        '<strong>Report it to your bank and to the police.</strong> This is an organised crime type, not a private embarrassment, and it is investigated as such.',
+        '<strong>Expect contact to continue</strong>, including apologies, threats, or a new person offering help. Preserve it all and respond to none of it.'
+      ],
+      foot: 'This is the cruellest version, because the loss is not only financial. Support matters here as much as the admin does.'
+    },
+    {
+      id: 'invest',
+      label: 'It was an investment that has gone wrong',
+      window: 'Stop further payments and preserve records',
+      steps: [
+        '<strong>Make no further payment</strong>, particularly any fee, tax or margin call required to withdraw your balance. That request is the tell.',
+        '<strong>Screenshot the platform, the dashboard and your balance</strong> before access is withdrawn. These sites disappear quickly.',
+        '<strong>Contact your bank</strong> about the payments you made and ask what dispute routes exist for each one.',
+        '<strong>Report it to the financial regulator</strong> as well as to fraud reporting — check whether the firm was authorised at all.',
+        '<strong>Keep all correspondence</strong>, including the names, phone numbers and any “account manager” who contacted you.'
+      ],
+      foot: 'A displayed balance that cannot be withdrawn without a further payment is not an investment problem. It is the shape of the fraud.'
+    }
+  ];
+
+  var chips = document.getElementById('chips');
+  var idle = document.getElementById('advice-idle');
+  var body = document.getElementById('advice-body');
+
+  ROUTES.forEach(function (route) {
+    var button = document.createElement('button');
+
+    button.type = 'button';
+    button.className = 'chip';
+    button.textContent = route.label;
+    button.setAttribute('aria-pressed', 'false');
+    button.dataset.route = route.id;
+
+    button.addEventListener('click', function () {
+      var open = button.getAttribute('aria-pressed') === 'true';
+
+      chips.querySelectorAll('.chip').forEach(function (other) {
+        other.setAttribute('aria-pressed', 'false');
+      });
+
+      if (open) {
+        idle.hidden = false;
+        body.hidden = true;
+        return;
+      }
+
+      button.setAttribute('aria-pressed', 'true');
+
+      body.innerHTML =
+        '<span class="advice__window">' + route.window + '</span>' +
+        '<ol>' + route.steps.map(function (step) { return '<li>' + step + '</li>'; }).join('') + '</ol>' +
+        '<p class="advice__foot">' + route.foot + '</p>';
+
+      idle.hidden = true;
+      body.hidden = false;
+    });
+
+    chips.appendChild(button);
+  });
+})();
+</script>
