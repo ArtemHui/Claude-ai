@@ -84,3 +84,68 @@ The footer carries a general-information disclaimer and directs people to their
 bank and national fraud reporting service as free routes that do not require the
 service. Have a solicitor review the fee model and any claim of outcome before
 launch, particularly if operating in a regulated market.
+
+---
+
+# Case log (CRM)
+
+`crm.html` — a private case log for the practice. Published separately:
+https://claude.ai/artifact/TxeSarVMeUWjPfkJ6RdADA
+
+Add people you are helping, track status, keep dated notes, and export to CSV.
+Data persists server-side via the artifact `db` capability and syncs live across
+your devices.
+
+## Access
+
+Declaring `db` makes the artifact organization-internal — it cannot be shared by
+public link. Access rules are tightened beyond the default:
+
+```
+rules: [{ path: "", read: "admin", write: "admin" }]
+```
+
+Only the owner and people given **Can edit** can read the case data at all. A
+viewer with "Can interact" sees an empty list rather than client records. This is
+least privilege on purpose: the default would have let any signed-in viewer of
+the artifact read every case.
+
+## Data model
+
+One document per case in the `clients` collection:
+
+| Field | Notes |
+|---|---|
+| `name` | required |
+| `contact` | one route, phone or email |
+| `scamType` | matches the landing page's eight routes, plus `other` |
+| `status` | `new` → `contacted` → `active` → `submitted` → `closed` |
+| `amount`, `occurredOn`, `summary` | all optional |
+| `notes[]` | `{at, text}`, appended, newest shown first |
+| `createdAt`, `updatedAt` | ISO timestamps |
+
+Notes live inside the case document rather than in their own collection, which
+keeps the document count low against the 5,000-document cap.
+
+## Deliberately not stored
+
+There are no fields for card numbers, bank login details, passwords, one-time
+codes or identity document numbers, and the page says so on screen. You do not
+need them to act on a case, and a list of scam victims with financial identifiers
+attached is the single most valuable thing a fraudster could steal from this
+business.
+
+## Before real client data goes in
+
+This is a working tool, but the data is sensitive personal information about
+crime victims, and in some jurisdictions details of criminal offences carry extra
+restrictions.
+
+- Decide a retention period and delete closed cases when it passes.
+- Confirm you are comfortable with the data residing in the artifact store, and
+  check whether your regulator or insurer expects a data processing agreement.
+- Export to CSV regularly — it is your backup and your exit route.
+- Keep sharing restricted to people who genuinely need the records.
+
+If any of that does not hold, an established CRM with a data processing
+agreement, or a self-hosted database you control, is the more appropriate home.
