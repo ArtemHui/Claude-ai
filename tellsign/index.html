@@ -1,0 +1,887 @@
+<title>Tellsign</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root {
+  --paper: #f5f7f9;
+  --surface: #ffffff;
+  --sunk: #eceff3;
+  --ink: #101c27;
+  --ink-soft: #3d4d5a;
+  --muted: #5d6d7a;
+  --hairline: #dbe1e7;
+  --hairline-strong: #c3ccd5;
+
+  --alert: #c0392b;
+  --alert-soft: #fbecea;
+  --verify: #0b6b73;
+  --verify-soft: #e4f1f2;
+
+  --display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --body: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --measure: 68ch;
+  --ease: cubic-bezier(0.2, 0.6, 0.3, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0e161d;
+    --surface: #16212a;
+    --sunk: #1c2932;
+    --ink: #eef3f7;
+    --ink-soft: #c2cfd9;
+    --muted: #9aabb7;
+    --hairline: #2a3945;
+    --hairline-strong: #3c4d5b;
+
+    --alert: #f08573;
+    --alert-soft: #2e1d1a;
+    --verify: #5fc3c9;
+    --verify-soft: #12292b;
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper: #0e161d;
+  --surface: #16212a;
+  --sunk: #1c2932;
+  --ink: #eef3f7;
+  --ink-soft: #c2cfd9;
+  --muted: #9aabb7;
+  --hairline: #2a3945;
+  --hairline-strong: #3c4d5b;
+
+  --alert: #f08573;
+  --alert-soft: #2e1d1a;
+  --verify: #5fc3c9;
+  --verify-soft: #12292b;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 18px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding-inline: 20px;
+}
+
+.measure { max-width: var(--measure); }
+
+h1, h2, h3 {
+  font-family: var(--display);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+  margin: 0;
+}
+
+h1 { font-size: clamp(2.25rem, 6vw, 3.75rem); }
+h2 { font-size: clamp(1.625rem, 4vw, 2.5rem); }
+h3 { font-size: 1.1875rem; font-family: var(--body); font-weight: 600; letter-spacing: 0; }
+
+p { margin: 0; }
+
+a { color: inherit; }
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------- header -- */
+
+.masthead {
+  border-bottom: 1px solid var(--hairline);
+  background: var(--surface);
+}
+
+.masthead__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-block: 16px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.brand svg { width: 26px; height: 26px; flex: none; }
+
+.masthead__note {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: var(--muted);
+  text-align: right;
+}
+
+/* --------------------------------------------------------------- hero -- */
+
+.hero { padding-block: clamp(48px, 8vw, 88px) 0; }
+
+.hero__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: clamp(32px, 5vw, 64px);
+  align-items: start;
+}
+
+.hero__lede {
+  margin-top: 20px;
+  font-size: 1.25rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  max-width: 34ch;
+}
+
+.hero__meta {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--hairline);
+  display: grid;
+  gap: 14px;
+}
+
+.hero__meta div { display: flex; gap: 12px; align-items: baseline; }
+
+.hero__meta dt {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--alert);
+  flex: none;
+  width: 2.2em;
+}
+
+.hero__meta dd { margin: 0; font-size: 0.9375rem; color: var(--ink-soft); }
+
+/* ---------------------------------------------------------- inspector -- */
+
+.exhibit {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.exhibit__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 14px;
+  background: var(--sunk);
+  border-bottom: 1px solid var(--hairline);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: var(--muted);
+}
+
+.exhibit__flag {
+  color: var(--alert);
+  font-weight: 500;
+}
+
+.phone { padding: 18px 16px 20px; }
+
+.phone__sender {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--muted);
+  padding-bottom: 12px;
+  border-bottom: 1px dashed var(--hairline);
+  margin-bottom: 16px;
+}
+
+.bubble {
+  background: var(--sunk);
+  border-radius: 14px 14px 14px 4px;
+  padding: 15px 17px;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.tell {
+  position: relative;
+  border: 0;
+  padding: 1px 3px;
+  margin: 0 -1px;
+  font: inherit;
+  color: inherit;
+  background: var(--alert-soft);
+  border-bottom: 2px solid var(--alert);
+  cursor: pointer;
+  border-radius: 2px 2px 0 0;
+  transition: background-color 160ms var(--ease);
+}
+
+.tell:hover, .tell:focus-visible { background: var(--alert); color: #fff; }
+.tell[aria-expanded="true"] { background: var(--alert); color: #fff; }
+
+.tell sup {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  font-weight: 600;
+  vertical-align: super;
+  margin-left: 2px;
+}
+
+.readout {
+  margin: 0;
+  padding: 16px;
+  border-top: 1px solid var(--hairline);
+  background: var(--alert-soft);
+  min-height: 132px;
+}
+
+.readout__idle {
+  font-size: 0.9375rem;
+  color: var(--muted);
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+}
+
+/* display:flex beats the UA [hidden] rule, so the hint would otherwise stay
+   on screen underneath the revealed explanation. */
+.readout__idle[hidden] { display: none; }
+
+.readout__idle svg { width: 17px; height: 17px; flex: none; margin-top: 3px; color: var(--alert); }
+
+.readout__title {
+  font-size: 0.8125rem;
+  font-family: var(--mono);
+  color: var(--alert);
+  margin-bottom: 7px;
+}
+
+.readout__body { font-size: 0.9375rem; line-height: 1.55; color: var(--ink); }
+
+.readout__body strong { font-weight: 600; }
+
+/* ------------------------------------------------------------ section -- */
+
+section { padding-block: clamp(56px, 8vw, 96px); }
+
+.rule { border-top: 1px solid var(--hairline); }
+
+.section__head { margin-bottom: 40px; }
+.section__head p { margin-top: 14px; color: var(--ink-soft); max-width: var(--measure); }
+
+/* -------------------------------------------------------------- tells -- */
+
+/* Five items: the last one spans the spare track so no card is orphaned
+   beside dead space. */
+.tells {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1px;
+  background: var(--hairline);
+  border: 1px solid var(--hairline);
+}
+
+@media (min-width: 620px) {
+  .tells { grid-template-columns: repeat(2, 1fr); }
+  .tells article:last-child { grid-column: span 2; }
+}
+
+@media (min-width: 940px) {
+  .tells { grid-template-columns: repeat(3, 1fr); }
+  .tells article:last-child { grid-column: span 2; }
+}
+
+.tells article {
+  background: var(--surface);
+  padding: 26px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.tells__num {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--alert);
+}
+
+.tells p { font-size: 0.9375rem; color: var(--ink-soft); }
+
+.tells__quote {
+  margin-top: 4px;
+  padding-left: 12px;
+  border-left: 2px solid var(--hairline-strong);
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* --------------------------------------------------------------- quiz -- */
+
+/* Four items in two columns fills both rows; three columns would strand one. */
+.quiz {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
+@media (min-width: 760px) {
+  .quiz { grid-template-columns: repeat(2, 1fr); }
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.card__msg {
+  font-family: var(--mono);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--ink);
+  background: var(--sunk);
+  border-radius: 4px;
+  padding: 14px;
+}
+
+.card__from {
+  display: block;
+  font-size: 0.6875rem;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.card__actions { display: flex; gap: 9px; flex-wrap: wrap; }
+
+.btn {
+  flex: 1 1 auto;
+  padding: 10px 14px;
+  border-radius: 3px;
+  border: 1px solid var(--hairline-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 160ms var(--ease), background-color 160ms var(--ease);
+}
+
+.btn:hover { border-color: var(--ink-soft); }
+.btn:focus-visible, .tell:focus-visible, a:focus-visible {
+  outline: 2px solid var(--verify);
+  outline-offset: 2px;
+}
+
+.card__verdict {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  padding: 13px 15px;
+  border-radius: 4px;
+  border-left: 3px solid;
+}
+
+.card__verdict--right { background: var(--verify-soft); border-color: var(--verify); }
+.card__verdict--wrong { background: var(--alert-soft); border-color: var(--alert); }
+
+.card__verdict b { display: block; margin-bottom: 4px; }
+.card__verdict--right b { color: var(--verify); }
+.card__verdict--wrong b { color: var(--alert); }
+
+.score {
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  color: var(--muted);
+  margin-top: 22px;
+}
+
+/* ------------------------------------------------------------ service -- */
+
+.services {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 28px;
+}
+
+.services article { display: flex; flex-direction: column; gap: 10px; }
+
+.services svg { width: 26px; height: 26px; color: var(--verify); }
+
+.services p { font-size: 0.9375rem; color: var(--ink-soft); }
+
+/* ---------------------------------------------------------- emergency -- */
+
+.emergency {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-top: 3px solid var(--alert);
+  border-radius: 4px;
+  padding: clamp(24px, 4vw, 40px);
+}
+
+.steps {
+  counter-reset: step;
+  list-style: none;
+  margin: 28px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 18px;
+}
+
+.steps li {
+  counter-increment: step;
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.steps li::before {
+  content: counter(step);
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  color: var(--alert);
+  border: 1px solid var(--alert);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+}
+
+.steps strong { display: block; font-weight: 600; }
+.steps span { font-size: 0.9375rem; color: var(--ink-soft); }
+
+/* -------------------------------------------------------- placeholder -- */
+
+.placeholder {
+  border: 1px dashed var(--hairline-strong);
+  border-radius: 4px;
+  padding: 22px;
+  background: repeating-linear-gradient(
+    -45deg, transparent 0 8px, rgba(125, 140, 155, 0.05) 8px 16px
+  );
+}
+
+.placeholder__tag {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 2px;
+  padding: 2px 7px;
+  margin-bottom: 12px;
+}
+
+.placeholder p { font-size: 0.9375rem; color: var(--muted); max-width: var(--measure); }
+
+/* ------------------------------------------------------------- footer -- */
+
+footer {
+  border-top: 1px solid var(--hairline);
+  background: var(--surface);
+  padding-block: 40px 56px;
+}
+
+.footer__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+footer p { font-size: 0.875rem; color: var(--muted); max-width: 46ch; }
+
+@media (max-width: 860px) {
+  .hero__grid { grid-template-columns: 1fr; }
+  .hero__lede { max-width: var(--measure); }
+}
+
+@media (max-width: 560px) {
+  body { font-size: 17px; }
+  .masthead__note { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 1ms !important; animation-duration: 1ms !important; }
+}
+</style>
+
+<header class="masthead">
+  <div class="wrap masthead__inner">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M3 6.5 12 3l9 3.5v5.2c0 4.6-3.6 8.3-9 9.8-5.4-1.5-9-5.2-9-9.8V6.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M12 8.6v4.2" stroke="var(--alert)" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="12" cy="16.1" r="1.05" fill="var(--alert)"/>
+      </svg>
+      Tellsign
+    </div>
+    <div class="masthead__note">Placeholder name &amp; mark<br>swap in one line</div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <div class="hero__grid">
+      <div>
+        <span class="eyebrow">Scam recognition &amp; response</span>
+        <h1 style="margin-top:16px">Every scam leaves a tell. We teach people to read them.</h1>
+        <p class="hero__lede">Fraud is not a technology problem. It is a persuasion problem, and persuasion has a grammar you can learn to spot.</p>
+
+        <dl class="hero__meta">
+          <div><dt>01</dt><dd>Training that uses real intercepted messages, not abstract advice</dd></div>
+          <div><dt>02</dt><dd>A number your people can call before they pay, not after</dd></div>
+          <div><dt>03</dt><dd>Incident response when money has already moved</dd></div>
+        </dl>
+      </div>
+
+      <div>
+        <div class="exhibit">
+          <div class="exhibit__bar">
+            <span>Exhibit A &middot; constructed example</span>
+            <span class="exhibit__flag">5 tells</span>
+          </div>
+
+          <div class="phone">
+            <div class="phone__sender">SMS &mdash; sender ID "HSBC" &middot; today 09:14</div>
+            <div class="bubble" id="bubble">
+              HSBC: A payment of <button type="button" class="tell" data-tell="amount" aria-expanded="false" aria-controls="readout">&pound;847.99<sup>1</sup></button> to PAYPAL*ELECTRNCS was authorised at 09:14.
+              <button type="button" class="tell" data-tell="urgency" aria-expanded="false" aria-controls="readout">If this was not you, you must act within 30 minutes<sup>2</sup></button>
+              to stop it. Cancel here:
+              <button type="button" class="tell" data-tell="domain" aria-expanded="false" aria-controls="readout">hsbc-secure-verify.com/stop<sup>3</sup></button>
+              or call our fraud team on
+              <button type="button" class="tell" data-tell="callback" aria-expanded="false" aria-controls="readout">0800 041 9922<sup>4</sup></button>.
+              <button type="button" class="tell" data-tell="secrecy" aria-expanded="false" aria-controls="readout">Do not discuss this case with branch staff.<sup>5</sup></button>
+            </div>
+          </div>
+
+          <div class="readout" id="readout" aria-live="polite">
+            <div class="readout__idle" id="readout-idle">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 3 2.5 20h19L12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                <path d="M12 10v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                <circle cx="12" cy="17" r="1" fill="currentColor"/>
+              </svg>
+              <span>Tap any underlined phrase. Each one is doing a specific job &mdash; and each is a reason to stop.</span>
+            </div>
+            <div id="readout-content" hidden>
+              <p class="readout__title" id="readout-title"></p>
+              <p class="readout__body" id="readout-body"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rule"></div>
+
+  <section class="wrap">
+    <div class="section__head">
+      <span class="eyebrow">The grammar of a scam</span>
+      <h2 style="margin-top:12px">Five tells, in almost every case</h2>
+      <p>The surface changes constantly &mdash; a bank, a courier, a tax office, a recruiter, a romance. The underlying structure barely changes at all. Teach the structure and the surface stops mattering.</p>
+    </div>
+
+    <div class="tells">
+      <article>
+        <span class="tells__num">Tell 01</span>
+        <h3>Manufactured time pressure</h3>
+        <p>A deadline exists to stop you checking. Real institutions let you call back; they do not lose your money because you took an hour.</p>
+        <p class="tells__quote">"within 30 minutes" &middot; "final notice" &middot; "your account will be suspended today"</p>
+      </article>
+
+      <article>
+        <span class="tells__num">Tell 02</span>
+        <h3>The contact route is supplied</h3>
+        <p>The link and the phone number are in the message. That is the whole trick: you are being handed the route to the people running it.</p>
+        <p class="tells__quote">Any number, link or QR code inside the message itself</p>
+      </article>
+
+      <article>
+        <span class="tells__num">Tell 03</span>
+        <h3>Isolation</h3>
+        <p>You are told not to tell anyone &mdash; framed as security, a confidential investigation, or not troubling your family. Secrecy protects them, never you.</p>
+        <p class="tells__quote">"do not discuss this case" &middot; "we are testing internal staff"</p>
+      </article>
+
+      <article>
+        <span class="tells__num">Tell 04</span>
+        <h3>An irreversible payment</h3>
+        <p>Bank transfer, cryptocurrency, gift card codes, cash couriers. All chosen for one property: once sent, the money cannot be recalled.</p>
+        <p class="tells__quote">"move it to a safe account" &middot; "pay the fee in vouchers"</p>
+      </article>
+
+      <article>
+        <span class="tells__num">Tell 05</span>
+        <h3>A near-miss identity</h3>
+        <p>A domain, sender ID or caller ID that is close but not exact. All three can be forged, so what looks right proves nothing.</p>
+        <p class="tells__quote">hsbc-secure-verify.com &middot; rnicrosoft.com &middot; a spoofed caller ID</p>
+      </article>
+    </div>
+  </section>
+
+  <div class="rule"></div>
+
+  <section class="wrap">
+    <div class="section__head">
+      <span class="eyebrow">Spot check</span>
+      <h2 style="margin-top:12px">Four messages. Which would you act on?</h2>
+      <p>This is the exercise we run with teams, at speed and under mild pressure &mdash; because that is the condition people are actually in when it matters.</p>
+    </div>
+
+    <div class="quiz" id="quiz"></div>
+    <p class="score" id="score">Not started &mdash; 4 remaining</p>
+  </section>
+
+  <div class="rule"></div>
+
+  <section class="wrap">
+    <div class="section__head">
+      <span class="eyebrow">What we do</span>
+      <h2 style="margin-top:12px">Three ways in</h2>
+    </div>
+
+    <div class="services">
+      <article>
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5h16v11H4zM9 20h6M12 16v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h3>Recognition training</h3>
+        <p>Sessions for staff or community groups built from messages actually sent to people like them. Delivered in plain language, with no assumed technical knowledge.</p>
+      </article>
+
+      <article>
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a1 1 0 01-1 1A15 15 0 014 5a1 1 0 011-1Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        <h3>Check-before-you-pay line</h3>
+        <p>A number to call while the pressure is on and the payment has not yet been made. The cheapest intervention there is, because nothing has been lost yet.</p>
+      </article>
+
+      <article>
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v7m0 0 3-2m-3 2L9 8M4 14v5a2 2 0 002 2h12a2 2 0 002-2v-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h3>After the fact</h3>
+        <p>Containment when money or credentials have already gone: what to freeze, who to notify, in what order, and what can realistically be recovered.</p>
+      </article>
+    </div>
+  </section>
+
+  <div class="rule"></div>
+
+  <section class="wrap">
+    <div class="emergency">
+      <span class="eyebrow">If it is happening right now</span>
+      <h2 style="margin-top:12px">Stop before you pay</h2>
+      <p class="measure" style="margin-top:14px;color:var(--ink-soft)">This advice is free and does not require us. If you only ever read one part of this site, read this part.</p>
+
+      <ol class="steps">
+        <li><span><strong>Stop the conversation.</strong> Hang up, close the chat, do not reply. Nothing genuine is lost by pausing. Pressure to stay on the line is itself the warning.</span></li>
+        <li><span><strong>Do not use their details.</strong> Find the number yourself &mdash; on your bank card, your statement, or by typing the official address into the browser. Never the number in the message.</span></li>
+        <li><span><strong>Use a different device if you can.</strong> If you are unsure whether a call really ended, call from another phone or wait before dialling.</span></li>
+        <li><span><strong>Tell one person.</strong> Say it out loud to somebody you trust. Isolation is the mechanism; breaking it usually breaks the scam.</span></li>
+        <li><span><strong>If money has moved, call your bank immediately</strong> and report it to your national fraud reporting service. Speed materially affects what can be recovered.</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <div class="rule"></div>
+
+  <section class="wrap">
+    <div class="placeholder">
+      <span class="placeholder__tag">Placeholder &mdash; needs your real details</span>
+      <h3 style="margin-bottom:10px">Credentials, accreditations and contact</h3>
+      <p>Deliberately left empty. On a site whose subject is fraud, invented trust signals &mdash; fabricated testimonials, borrowed client logos, made-up certification badges or user numbers &mdash; would be the same technique the page warns against. Send me your real registration number, accreditations, named team and contact routes and this becomes the proof section.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap footer__grid">
+    <div>
+      <div class="brand" style="font-size:1.0625rem">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M3 6.5 12 3l9 3.5v5.2c0 4.6-3.6 8.3-9 9.8-5.4-1.5-9-5.2-9-9.8V6.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M12 8.6v4.2" stroke="var(--alert)" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="12" cy="16.1" r="1.05" fill="var(--alert)"/>
+        </svg>
+        Tellsign
+      </div>
+      <p style="margin-top:12px">The messages shown on this page are constructed examples used for training. They are not real correspondence from any named company, and no organisation mentioned is affiliated with this site.</p>
+    </div>
+    <p>We will never contact you asking for a password, a payment, or remote access to your device.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  var TELLS = {
+    amount: {
+      title: 'Tell 01 — a number that starts the panic',
+      body: 'A precise, plausible, painful amount. Specificity reads as authenticity, and the shock is what stops you thinking. The figure is chosen to be large enough to alarm, small enough to believe.'
+    },
+    urgency: {
+      title: 'Tell 02 — the deadline exists to stop you checking',
+      body: 'No bank loses your money because you took an hour to call back. A countdown has exactly one function: to prevent the verification that would end the scam.'
+    },
+    domain: {
+      title: 'Tell 05 — a near-miss address',
+      body: 'A real bank uses its own domain. <strong>hsbc-secure-verify.com</strong> is not hsbc.co.uk — the brand name appears in the label, where anyone can put it, not in the registered domain. Read domains right-to-left from the final slash.'
+    },
+    callback: {
+      title: 'Tell 02 — you are being handed the route',
+      body: 'The number is in the message, so it reaches whoever sent it. A calm, professional voice answering "fraud department" proves nothing at all. Use the number on your card instead.'
+    },
+    secrecy: {
+      title: 'Tell 03 — isolation, dressed as security',
+      body: 'This line exists because branch staff and family members stop these scams every day. Any instruction not to discuss it is the single strongest signal in the message.'
+    }
+  };
+
+  var QUIZ = [
+    {
+      from: 'Email — no-reply@royalmail-redelivery.info',
+      msg: 'Your parcel is held pending an unpaid shipping fee of £2.99. Reschedule delivery within 48 hours or the item is returned to sender.',
+      scam: true,
+      why: 'The trivial amount is the point: £2.99 feels too small to bother verifying, and the goal is card details, not the fee. Note the domain is <strong>royalmail-redelivery.info</strong>, not royalmail.com.'
+    },
+    {
+      from: 'SMS — your bank, after you called them',
+      msg: 'We have cancelled the card ending 4417. A replacement arrives in 3–5 working days. No action is needed and we will never ask you to move money.',
+      scam: false,
+      why: 'Asks nothing of you, offers no link, applies no pressure, and you initiated the contact. Messages that demand nothing are rarely the problem.'
+    },
+    {
+      from: 'Phone — caller ID shows your bank’s real number',
+      msg: 'Our systems flagged fraud on your account. To protect your balance we need to move it to a new safe account in your name. Stay on the line while the transfer completes.',
+      scam: true,
+      why: '"Safe account" is not a banking product — it does not exist. No genuine bank asks you to transfer your own money to protect it. Caller ID is trivially spoofed, so a correct-looking number is not evidence.'
+    },
+    {
+      from: 'Message — a colleague’s name, unfamiliar number',
+      msg: 'Hi, this is the new CFO. I am in back-to-back meetings and cannot take calls. I need you to settle an urgent supplier invoice today — keep this between us until the announcement.',
+      scam: true,
+      why: 'Authority, urgency, unreachability and secrecy in four lines. The unreachability is deliberate: it removes the one check — speaking to them — that would end it.'
+    }
+  ];
+
+  /* ---------------------------------------------------------- inspector */
+
+  var idle = document.getElementById('readout-idle');
+  var content = document.getElementById('readout-content');
+  var rTitle = document.getElementById('readout-title');
+  var rBody = document.getElementById('readout-body');
+
+  document.querySelectorAll('.tell').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var open = button.getAttribute('aria-expanded') === 'true';
+
+      document.querySelectorAll('.tell').forEach(function (other) {
+        other.setAttribute('aria-expanded', 'false');
+      });
+
+      if (open) {
+        idle.hidden = false;
+        content.hidden = true;
+        return;
+      }
+
+      button.setAttribute('aria-expanded', 'true');
+
+      var data = TELLS[button.dataset.tell];
+
+      rTitle.textContent = data.title;
+      rBody.innerHTML = data.body;
+      idle.hidden = true;
+      content.hidden = false;
+    });
+  });
+
+  /* --------------------------------------------------------------- quiz */
+
+  var quiz = document.getElementById('quiz');
+  var scoreEl = document.getElementById('score');
+  var answered = 0;
+  var correct = 0;
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, function (ch) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+    });
+  }
+
+  QUIZ.forEach(function (item, index) {
+    var card = document.createElement('div');
+
+    card.className = 'card';
+    card.innerHTML =
+      '<div class="card__msg"><span class="card__from">' + escapeHtml(item.from) + '</span>' +
+      escapeHtml(item.msg) + '</div>' +
+      '<div class="card__actions">' +
+      '<button type="button" class="btn" data-answer="scam">Scam</button>' +
+      '<button type="button" class="btn" data-answer="genuine">Genuine</button>' +
+      '</div>';
+
+    var actions = card.querySelector('.card__actions');
+
+    actions.addEventListener('click', function (event) {
+      var button = event.target.closest('[data-answer]');
+
+      if (!button) { return; }
+
+      var saidScam = button.dataset.answer === 'scam';
+      var right = saidScam === item.scam;
+
+      answered++;
+      if (right) { correct++; }
+
+      var verdict = document.createElement('div');
+
+      verdict.className = 'card__verdict ' + (right ? 'card__verdict--right' : 'card__verdict--wrong');
+      verdict.innerHTML = '<b>' + (right ? 'Correct' : 'Not quite') + ' — this one is ' +
+        (item.scam ? 'a scam' : 'genuine') + '.</b>' + item.why;
+
+      actions.replaceWith(verdict);
+
+      scoreEl.textContent = answered === QUIZ.length
+        ? correct + ' of ' + QUIZ.length + ' correct — the three scams share the same structure, only the story changes.'
+        : correct + ' of ' + answered + ' correct — ' + (QUIZ.length - answered) + ' remaining';
+    });
+
+    quiz.appendChild(card);
+  });
+})();
+</script>
