@@ -149,3 +149,36 @@ restrictions.
 
 If any of that does not hold, an established CRM with a data processing
 agreement, or a self-hosted database you control, is the more appropriate home.
+
+## Access log
+
+A second tab in the CRM records who opens the tool. Each visit is written to
+`access/<userId>` — one document per person, holding their recent sessions.
+
+| Captured | Source |
+|---|---|
+| Who | `user` capability, `profile` scope. Only the opaque id is stored; the display name is resolved at render time, never written to the store. |
+| When | Session start, last activity, and a view count |
+| Where (approximate) | IANA timezone reported by the browser, e.g. `Europe/Warsaw` |
+| Device | Browser family, OS and screen size, derived from the user-agent |
+
+A reload within 30 minutes on the same device and timezone extends the current
+session rather than appending a new one, so a refresh does not read as a fresh
+sign-in. Sessions are pruned to the most recent 40 per person, keeping each
+document well inside the 256 KiB body limit.
+
+### What it deliberately cannot do
+
+- **No IP address, no city.** A published page never sees the visitor's IP, and
+  the artifact sandbox blocks network calls to any geolocation service. Timezone
+  is the only location signal obtainable, and it is coarse and user-changeable.
+  Browser GPS (`navigator.geolocation`) would give real coordinates but prompts
+  for permission on every visit and is far more invasive than this needs.
+- **No email addresses.** This workspace does not release the `email` scope to
+  pages, so people are identified by display name only.
+- **Not a security audit trail.** It records what the page observes. Treat it as
+  an operational record of who used the tool; the real access boundary is the
+  Share menu and the `admin` read/write rule.
+
+The log is itself personal data about your staff — include it in whatever
+retention policy you set for the case records.

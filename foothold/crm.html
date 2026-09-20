@@ -230,6 +230,72 @@ textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
 .note time { display: block; font-size: 0.6875rem; color: var(--muted); margin-bottom: 3px; font-variant-numeric: tabular-nums; }
 .note p { font-size: 0.9375rem; color: var(--ink-soft); white-space: pre-wrap; }
 
+/* --------------------------------------------------------------- tabs -- */
+
+.tabs { display: flex; gap: 4px; margin-top: 22px; border-bottom: 1px solid var(--hairline); }
+
+.tab {
+  background: none; border: 0; border-bottom: 2px solid transparent;
+  padding: 10px 14px; font-size: 0.9375rem; font-weight: 600;
+  color: var(--muted); cursor: pointer; margin-bottom: -1px;
+}
+
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--steady); }
+.tab:hover { color: var(--ink); }
+
+/* ------------------------------------------------------------- access -- */
+
+.people { display: grid; gap: 12px; }
+
+.person {
+  background: var(--surface); border: 1px solid var(--hairline);
+  border-radius: 3px; overflow: hidden;
+}
+
+.person__head {
+  display: grid; grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 12px; align-items: center; padding: 13px 15px;
+  width: 100%; background: none; border: 0; text-align: left; cursor: pointer;
+}
+
+.person__head:hover { background: var(--sunk); }
+
+.person__avatar { width: 34px; height: 34px; border-radius: 50%; display: block; }
+.person__name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.person__meta { display: block; font-size: 0.8125rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.person__when { font-size: 0.8125rem; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+
+.sessions { border-top: 1px solid var(--hairline); }
+
+.session {
+  display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 10px; padding: 10px 15px; font-size: 0.8125rem;
+  border-bottom: 1px solid var(--hairline); align-items: baseline;
+}
+
+.session:last-child { border-bottom: 0; }
+.session__time { font-variant-numeric: tabular-nums; color: var(--ink-soft); }
+.session__where { color: var(--ink-soft); }
+.session__device { color: var(--muted); }
+.session__hits { color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+
+.sessions__head {
+  display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 10px; padding: 8px 15px; font-size: 0.6875rem; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--muted); background: var(--sunk);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.scope {
+  border: 1px solid var(--info); background: var(--info-soft);
+  border-radius: 3px; padding: 15px 17px; margin-bottom: 18px;
+  font-size: 0.875rem; color: var(--ink-soft);
+}
+
+.scope b { color: var(--ink); }
+.scope ul { margin: 9px 0 0; padding-left: 18px; }
+.scope li { margin-bottom: 3px; }
+
 /* ------------------------------------------------------------- advice -- */
 
 .caution {
@@ -298,6 +364,12 @@ textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
 </div>
 
 <main class="wrap">
+  <div class="tabs" role="tablist">
+    <button type="button" class="tab" id="tab-cases" role="tab" aria-selected="true" aria-controls="pane-cases">Cases</button>
+    <button type="button" class="tab" id="tab-access" role="tab" aria-selected="false" aria-controls="pane-access">Access log</button>
+  </div>
+
+<div id="pane-cases" role="tabpanel" aria-labelledby="tab-cases">
   <div class="stats" id="stats"></div>
 
   <div class="filters">
@@ -327,6 +399,24 @@ textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
   <div id="view">
     <div class="state" id="boot">Connecting to your case store&hellip;</div>
   </div>
+</div>
+
+<div id="pane-access" role="tabpanel" aria-labelledby="tab-access" hidden>
+  <div class="scope">
+    <b>What this log can and cannot see.</b>
+    It records each person who opens this tool, when, and the device and timezone their browser reports.
+    <ul>
+      <li><b>No IP address and no city.</b> A published page never sees the visitor&rsquo;s IP, and it cannot call a location service &mdash; so the timezone below is the only location signal available, and it is only a rough one.</li>
+      <li><b>Names, not email addresses.</b> Your workspace does not release email addresses to pages, so people are identified by display name and account.</li>
+      <li><b>Not tamper-proof.</b> This is an operational record of who used the tool, not a security audit trail. The real boundary is who you grant access to in the Share menu.</li>
+      <li>Timezone and device come from the browser and can be changed by the person using it.</li>
+    </ul>
+  </div>
+
+  <div id="access-view">
+    <div class="state">Loading access records&hellip;</div>
+  </div>
+</div>
 
   <div class="caution">
     <b>Keep this record minimal.</b> Store only what you need to help someone: how to reach them, what happened, and where the case has got to.
@@ -434,6 +524,7 @@ textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
   var busy = false;
   var readOnly = false;
   var unsubscribe = null;
+  var accessUnsub = null;
   var toastTimer = null;
 
   function esc(value) {
@@ -777,6 +868,213 @@ textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
     }
   }
 
+  /* ------------------------------------------------------------ access */
+
+  var userApi = null;
+  var access = [];
+  var expanded = {};
+  var sessionWritten = false;
+
+  /** Short, readable device label. Full user-agent strings are noise. */
+  function deviceLabel() {
+    var ua = navigator.userAgent || '';
+    var browser = 'Browser';
+    var os = 'Unknown OS';
+
+    if (/Edg\//.test(ua)) { browser = 'Edge'; }
+    else if (/OPR\//.test(ua)) { browser = 'Opera'; }
+    else if (/Firefox\//.test(ua)) { browser = 'Firefox'; }
+    else if (/Chrome\//.test(ua)) { browser = 'Chrome'; }
+    else if (/Safari\//.test(ua)) { browser = 'Safari'; }
+
+    if (/iPhone/.test(ua)) { os = 'iPhone'; }
+    else if (/iPad/.test(ua)) { os = 'iPad'; }
+    else if (/Android/.test(ua)) { os = 'Android'; }
+    else if (/Mac OS X/.test(ua)) { os = 'Mac'; }
+    else if (/Windows/.test(ua)) { os = 'Windows'; }
+    else if (/Linux/.test(ua)) { os = 'Linux'; }
+
+    return browser + ' on ' + os;
+  }
+
+  function timezone() {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Unknown';
+    } catch (e) {
+      return 'Unknown';
+    }
+  }
+
+  /**
+   * Record this visit against the viewer's own access document.
+   * Runs once per page load. A reload within the grace window extends the
+   * existing session rather than appending a new one, so a refresh does not
+   * read as a fresh login.
+   */
+  async function recordSession(uid) {
+    if (sessionWritten || !db || !uid) { return; }
+
+    sessionWritten = true;
+
+    var GRACE_MS = 30 * 60 * 1000;
+    var now = new Date();
+    var device = deviceLabel();
+    var tz = timezone();
+    var locale = (navigator.language || '').toString();
+    var ref = db.collection('access').doc(uid);
+
+    try {
+      var snap = await ref.get();
+      var body = snap.exists ? snap.data() : null;
+      var sessions = (body && Array.isArray(body.sessions)) ? body.sessions.slice() : [];
+      var last = sessions[sessions.length - 1];
+
+      if (last && last.device === device && last.tz === tz &&
+          (now.getTime() - new Date(last.lastAt).getTime()) < GRACE_MS) {
+        last.lastAt = now.toISOString();
+        last.hits = (last.hits || 1) + 1;
+      } else {
+        sessions.push({
+          startedAt: now.toISOString(),
+          lastAt: now.toISOString(),
+          tz: tz,
+          locale: locale,
+          device: device,
+          screen: (window.screen ? window.screen.width + '×' + window.screen.height : ''),
+          hits: 1
+        });
+      }
+
+      // Keep the document well inside the 256 KiB body limit.
+      if (sessions.length > 40) { sessions = sessions.slice(sessions.length - 40); }
+
+      await ref.set({
+        userId: uid,
+        sessions: sessions,
+        lastSeenAt: now.toISOString(),
+        totalVisits: ((body && body.totalVisits) || 0) + 1
+      });
+    } catch (error) {
+      // An access record failing must never block the case log.
+      if (error && error.code === 'invalid_argument') {
+        readOnly = true;
+        applyReadOnly();
+      }
+    }
+  }
+
+  function renderAccess() {
+    var host = $('access-view');
+
+    if (!db) {
+      host.innerHTML = '<div class="state state--error">The access log needs the case store, which is not available in this view.</div>';
+      return;
+    }
+
+    if (!access.length) {
+      host.innerHTML = '<div class="empty">No sign-ins recorded yet.</div>';
+      return;
+    }
+
+    var ids = access.map(function (row) { return row.userId; }).filter(Boolean);
+
+    // Names are resolved on every render, never stored.
+    var resolve = userApi ? userApi.profiles(ids) : Promise.resolve({});
+
+    resolve.then(function (profiles) {
+      var rows = access.slice().sort(function (a, b) {
+        return String(b.lastSeenAt || '').localeCompare(String(a.lastSeenAt || ''));
+      });
+
+      host.innerHTML = '<div class="people">' + rows.map(function (row) {
+        var open = !!expanded[row.userId];
+        var sessions = (row.sessions || []).slice().reverse();
+
+        var head =
+          '<button type="button" class="person__head" data-person="' + esc(row.userId) + '" aria-expanded="' + open + '">' +
+          '<img class="person__avatar" alt="" data-avatar="' + esc(row.userId) + '">' +
+          '<span><span class="person__name" data-name="' + esc(row.userId) + '"></span>' +
+          '<span class="person__meta">' + esc(lastSeenWhere(row)) + '</span></span>' +
+          '<span class="person__when">' + esc(relative(row.lastSeenAt)) + '<br>' +
+          esc(sessions.length) + (sessions.length === 1 ? ' session' : ' sessions') + '</span>' +
+          '</button>';
+
+        var list = open
+          ? '<div class="sessions"><div class="sessions__head"><span>Started</span><span>Timezone</span><span>Device</span><span>Views</span></div>' +
+            sessions.map(function (s) {
+              return '<div class="session">' +
+                '<span class="session__time">' + esc(new Date(s.startedAt).toLocaleString()) + '</span>' +
+                '<span class="session__where">' + esc(s.tz || 'Unknown') + '</span>' +
+                '<span class="session__device">' + esc(s.device || '') + '</span>' +
+                '<span class="session__hits">' + esc(s.hits || 1) + '</span>' +
+                '</div>';
+            }).join('') + '</div>'
+          : '';
+
+        return '<div class="person">' + head + list + '</div>';
+      }).join('') + '</div>';
+
+      // Names and emails are other people's input: set them as text, never HTML.
+      rows.forEach(function (row) {
+        var profile = profiles[row.userId];
+        var nameEl = host.querySelector('[data-name="' + row.userId + '"]');
+        var avatarEl = host.querySelector('[data-avatar="' + row.userId + '"]');
+
+        // Display names are another person's input: set as text, never HTML.
+        if (nameEl) { nameEl.textContent = (profile && profile.name) || 'Someone'; }
+        if (avatarEl && profile && profile.avatarUrl) { avatarEl.src = profile.avatarUrl; }
+      });
+    });
+  }
+
+  /** Where and on what this person was last seen, from their newest session. */
+  function lastSeenWhere(row) {
+    var sessions = row.sessions || [];
+    var last = sessions[sessions.length - 1];
+
+    if (!last) { return 'No sessions recorded'; }
+
+    return [last.tz, last.device].filter(Boolean).join(' · ');
+  }
+
+  function relative(iso) {
+    if (!iso) { return 'Never'; }
+
+    var diff = Date.now() - new Date(iso).getTime();
+    var mins = Math.round(diff / 60000);
+
+    if (mins < 1) { return 'Just now'; }
+    if (mins < 60) { return mins + ' min ago'; }
+    if (mins < 1440) { return Math.round(mins / 60) + ' h ago'; }
+    if (mins < 43200) { return Math.round(mins / 1440) + ' d ago'; }
+
+    return new Date(iso).toLocaleDateString();
+  }
+
+  function showTab(which) {
+    var cases = which === 'cases';
+
+    $('tab-cases').setAttribute('aria-selected', String(cases));
+    $('tab-access').setAttribute('aria-selected', String(!cases));
+    $('pane-cases').hidden = !cases;
+    $('pane-access').hidden = cases;
+
+    if (!cases) { renderAccess(); }
+  }
+
+  $('tab-cases').addEventListener('click', function () { showTab('cases'); });
+  $('tab-access').addEventListener('click', function () { showTab('access'); });
+
+  $('access-view').addEventListener('click', function (event) {
+    var head = event.target.closest('[data-person]');
+
+    if (!head) { return; }
+
+    var id = head.dataset.person;
+    expanded[id] = !expanded[id];
+    renderAccess();
+  });
+
   /* -------------------------------------------------------------- boot */
 
   $('new-case').addEventListener('click', function () { openPanel(null); });
@@ -848,6 +1146,33 @@ textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
       $('view').innerHTML = '<div class="state state--error">The case list stopped updating (' +
         esc(error.code) + '). Reload the page to reconnect.</div>';
     });
+
+    // Access records: subscribe once, and record this visit.
+    accessUnsub = db.collection('access').onSnapshot(function (snap) {
+      access = snap.docs.map(function (doc) {
+        var data = doc.data() || {};
+        return {
+          userId: doc.id,
+          sessions: Array.isArray(data.sessions) ? data.sessions : [],
+          lastSeenAt: data.lastSeenAt || '',
+          totalVisits: data.totalVisits || 0
+        };
+      });
+
+      if (!$('pane-access').hidden) { renderAccess(); }
+    }, function () {
+      access = [];
+    });
+
+    use('user').then(function (api) {
+      userApi = api;
+
+      if (!api) { return; }
+
+      api.id().then(function (uid) {
+        if (uid) { recordSession(uid); }
+      });
+    });
   });
 
   use('downloads').then(function (api) {
@@ -858,6 +1183,7 @@ textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
 
   window.addEventListener('beforeunload', function () {
     if (unsubscribe) { unsubscribe(); }
+    if (accessUnsub) { accessUnsub(); }
   });
 })();
 </script>
