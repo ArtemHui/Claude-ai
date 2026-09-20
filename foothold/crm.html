@@ -230,6 +230,42 @@ textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
 .note time { display: block; font-size: 0.6875rem; color: var(--muted); margin-bottom: 3px; font-variant-numeric: tabular-nums; }
 .note p { font-size: 0.9375rem; color: var(--ink-soft); white-space: pre-wrap; }
 
+/* --------------------------------------------------------------- call -- */
+
+.callbox {
+  border: 1px solid var(--hairline-strong);
+  border-left: 3px solid var(--steady);
+  border-radius: 3px;
+  background: var(--sunk);
+  padding: 13px 14px;
+}
+
+.callbox__row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.callbox__label { display: block; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.callbox__number { font-size: 1.0625rem; font-weight: 600; color: var(--ink); text-decoration: none; font-variant-numeric: tabular-nums; }
+.callbox__number:hover { color: var(--steady); }
+.callbox__actions { display: flex; gap: 7px; }
+.callbox__hint { margin-top: 8px; font-size: 0.75rem; color: var(--muted); }
+
+.calls { display: grid; gap: 7px; }
+
+.call {
+  background: var(--surface); border: 1px solid var(--hairline);
+  border-radius: 3px; padding: 9px 11px;
+}
+
+.call__head { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.call__when { font-size: 0.6875rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.call__note { font-size: 0.875rem; color: var(--ink-soft); margin-top: 4px; white-space: pre-wrap; }
+
+.tag {
+  font-size: 0.6875rem; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+}
+.tag--answered { background: var(--steady-soft); color: var(--steady); }
+.tag--voicemail { background: var(--warm-soft); color: var(--warm); }
+.tag--no_answer { background: var(--warn-soft); color: var(--warn); }
+.tag--callback { background: var(--info-soft); color: var(--info); }
+
 /* --------------------------------------------------------------- tabs -- */
 
 .tabs { display: flex; gap: 4px; margin-top: 22px; border-bottom: 1px solid var(--hairline); }
@@ -440,9 +476,56 @@ textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
     </div>
 
     <div class="field">
-      <label for="f-contact">How to reach them</label>
-      <input type="text" id="f-contact" placeholder="Phone or email" autocomplete="off">
+      <label for="f-phone">Phone</label>
+      <input type="text" id="f-phone" placeholder="+44 7700 900123" inputmode="tel" autocomplete="off">
+    </div>
+
+    <div class="field">
+      <label for="f-contact">Other contact</label>
+      <input type="text" id="f-contact" placeholder="Email, or how else to reach them" autocomplete="off">
       <span class="minimise">One route is enough.</span>
+    </div>
+
+    <div class="callbox" id="callbox" hidden>
+      <div class="callbox__row">
+        <div>
+          <span class="callbox__label">Call</span>
+          <a class="callbox__number" id="call-link" href="#"></a>
+        </div>
+        <div class="callbox__actions">
+          <a class="btn btn--primary" id="call-go" href="#">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a1 1 0 01-1 1A15 15 0 014 5a1 1 0 011-1Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+            Call
+          </a>
+          <button type="button" class="btn" id="call-copy">Copy</button>
+        </div>
+      </div>
+      <p class="callbox__hint">Opens your phone or FaceTime. If nothing happens, your browser has no call handler &mdash; copy the number instead.</p>
+
+      <button type="button" class="btn" id="call-log-open" style="margin-top:10px">Log a call</button>
+
+      <div id="call-log-form" hidden style="margin-top:12px;display:grid;gap:10px">
+        <div class="grid2">
+          <div class="field">
+            <label for="f-outcome">Outcome</label>
+            <select id="f-outcome"></select>
+          </div>
+          <div class="field">
+            <label for="f-minutes">Minutes</label>
+            <input type="number" id="f-minutes" min="0" step="1" placeholder="Optional">
+          </div>
+        </div>
+        <div class="field">
+          <label for="f-call-note">What was said</label>
+          <textarea id="f-call-note" placeholder="Agreed next steps, what they need."></textarea>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button type="button" class="btn btn--primary" id="call-save">Save call</button>
+          <button type="button" class="btn" id="call-cancel">Cancel</button>
+        </div>
+      </div>
+
+      <div class="calls" id="calls" style="margin-top:12px"></div>
     </div>
 
     <div class="grid2">
@@ -604,7 +687,7 @@ textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
       if (type && c.scamType !== type) { return false; }
 
       if (q) {
-        var hay = (c.name + ' ' + (c.contact || '') + ' ' + (c.summary || '')).toLowerCase();
+        var hay = (c.name + ' ' + (c.contact || '') + ' ' + (c.phone || '') + ' ' + (c.summary || '')).toLowerCase();
         if (hay.indexOf(q) === -1) { return false; }
       }
 
@@ -655,7 +738,7 @@ textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
       return '<button type="button" class="row" data-id="' + esc(c.id) + '"' +
         (c.id === selectedId ? ' aria-current="true"' : '') + '>' +
         '<span><span class="row__name">' + esc(c.name) + '</span>' +
-        '<span class="row__sub">' + esc(c.contact || 'No contact route') + '</span></span>' +
+        '<span class="row__sub">' + esc(phoneFor(c) || c.contact || 'No contact route') + '</span></span>' +
         '<span class="row__sub">' + esc(labelOf(TYPES, c.scamType)) + '</span>' +
         '<span class="row__amount">' + esc(money(c.amount)) + '</span>' +
         '<span class="pill pill--' + esc(c.status || 'new') + '">' + esc(labelOf(STATUSES, c.status)) + '</span>' +
@@ -678,6 +761,7 @@ textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
     $('panel-title').textContent = record ? 'Case details' : 'New case';
     $('f-name').value = record ? record.name || '' : '';
     $('f-contact').value = record ? record.contact || '' : '';
+    $('f-phone').value = record ? record.phone || '' : '';
     $('f-type').value = record ? record.scamType || 'other' : 'transfer';
     $('f-status').value = record ? record.status || 'new' : 'new';
     $('f-amount').value = record && record.amount != null ? record.amount : '';
@@ -687,8 +771,10 @@ textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
 
     $('notes-section').hidden = !record;
     $('delete').hidden = !record;
+    $('call-log-form').hidden = true;
 
     renderNotes(record);
+    renderCallbox(record);
 
     $('scrim').hidden = false;
     $('panel').hidden = false;
@@ -735,6 +821,7 @@ textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
     return {
       name: $('f-name').value.trim(),
       contact: $('f-contact').value.trim(),
+      phone: $('f-phone').value.trim(),
       scamType: $('f-type').value,
       status: $('f-status').value,
       amount: amount === '' ? null : Number(amount),
@@ -765,6 +852,7 @@ textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
       } else {
         body.createdAt = new Date().toISOString();
         body.notes = [];
+        body.calls = [];
         await db.collection('clients').add(body);
         toast('Case added.');
       }
@@ -836,7 +924,7 @@ textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
   /* ------------------------------------------------------------ export */
 
   function csv() {
-    var head = ['Name', 'Contact', 'Type', 'Status', 'Amount', 'Occurred', 'Summary', 'Notes', 'Created', 'Updated'];
+    var head = ['Name', 'Phone', 'Contact', 'Type', 'Status', 'Amount', 'Occurred', 'Summary', 'Notes', 'Calls', 'Created', 'Updated'];
 
     var cell = function (value) {
       return '"' + String(value == null ? '' : value).replace(/"/g, '""') + '"';
@@ -844,10 +932,15 @@ textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
 
     var rows = visible().map(function (c) {
       var notes = (c.notes || []).map(function (n) { return n.at + ': ' + n.text; }).join(' | ');
+      var calls = (c.calls || []).map(function (call) {
+        return call.at + ' ' + labelOf(OUTCOMES, call.outcome) +
+          (call.minutes ? ' (' + call.minutes + ' min)' : '') +
+          (call.note ? ': ' + call.note : '');
+      }).join(' | ');
 
       return [
-        c.name, c.contact, labelOf(TYPES, c.scamType), labelOf(STATUSES, c.status),
-        c.amount == null ? '' : c.amount, c.occurredOn, c.summary, notes, c.createdAt, c.updatedAt
+        c.name, phoneFor(c), c.contact, labelOf(TYPES, c.scamType), labelOf(STATUSES, c.status),
+        c.amount == null ? '' : c.amount, c.occurredOn, c.summary, notes, calls, c.createdAt, c.updatedAt
       ].map(cell).join(',');
     });
 
@@ -867,6 +960,142 @@ textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
       toast('The export could not be saved.');
     }
   }
+
+  /* -------------------------------------------------------------- call */
+
+  var OUTCOMES = [
+    { key: 'answered', label: 'Spoke with them' },
+    { key: 'voicemail', label: 'Left voicemail' },
+    { key: 'no_answer', label: 'No answer' },
+    { key: 'callback', label: 'They will call back' }
+  ];
+
+  fillSelect($('f-outcome'), OUTCOMES, null);
+
+  /** Digits and a leading +, which is all a tel: URI may carry. */
+  function dialable(value) {
+    var raw = String(value || '').trim();
+    var cleaned = raw.replace(/[^\d+]/g, '');
+
+    if (cleaned.indexOf('+') > 0) { cleaned = cleaned.replace(/\+/g, ''); }
+
+    return cleaned.replace(/(?!^)\+/g, '');
+  }
+
+  /** A contact string is worth offering as a call only if it reads as a number. */
+  function looksLikePhone(value) {
+    var digits = String(value || '').replace(/\D/g, '');
+    return digits.length >= 7 && !/@/.test(String(value || ''));
+  }
+
+  function phoneFor(record) {
+    if (!record) { return ''; }
+    if (record.phone) { return record.phone; }
+    return looksLikePhone(record.contact) ? record.contact : '';
+  }
+
+  function renderCallbox(record) {
+    var number = phoneFor(record);
+
+    $('callbox').hidden = !record || !number;
+
+    if (!record || !number) { return; }
+
+    var tel = 'tel:' + dialable(number);
+
+    $('call-link').textContent = number;
+    $('call-link').setAttribute('href', tel);
+    $('call-go').setAttribute('href', tel);
+
+    var calls = (record.calls || []).slice().reverse();
+
+    $('calls').innerHTML = calls.length
+      ? calls.map(function (call) {
+          var label = labelOf(OUTCOMES, call.outcome);
+          var mins = call.minutes ? ' &middot; ' + esc(call.minutes) + ' min' : '';
+
+          return '<div class="call"><div class="call__head">' +
+            '<span class="tag tag--' + esc(call.outcome) + '">' + esc(label) + '</span>' +
+            '<span class="call__when">' + esc(new Date(call.at).toLocaleString()) + mins + '</span>' +
+            '</div>' +
+            (call.note ? '<p class="call__note">' + esc(call.note) + '</p>' : '') +
+            '</div>';
+        }).join('')
+      : '<p style="font-size:0.8125rem;color:var(--muted)">No calls logged yet.</p>';
+  }
+
+  async function saveCall() {
+    if (busy || readOnly || !db || !selectedId) { return; }
+
+    var record = clients.filter(function (c) { return c.id === selectedId; })[0];
+
+    if (!record) { return; }
+
+    var minutes = $('f-minutes').value.trim();
+    var calls = (record.calls || []).slice();
+
+    calls.push({
+      at: new Date().toISOString(),
+      outcome: $('f-outcome').value,
+      minutes: minutes === '' ? null : Number(minutes),
+      note: $('f-call-note').value.trim()
+    });
+
+    if (calls.length > 60) { calls = calls.slice(calls.length - 60); }
+
+    busy = true;
+    $('call-save').disabled = true;
+
+    try {
+      await db.collection('clients').doc(selectedId).update({
+        calls: calls,
+        lastCallAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+
+      $('f-call-note').value = '';
+      $('f-minutes').value = '';
+      $('call-log-form').hidden = true;
+      toast('Call logged.');
+    } catch (error) {
+      reportError(error);
+    } finally {
+      busy = false;
+      $('call-save').disabled = readOnly;
+    }
+  }
+
+  $('call-copy').addEventListener('click', function () {
+    var number = $('call-link').textContent;
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(number).then(function () {
+        toast('Copied ' + number);
+      }).catch(function () {
+        toast(number);
+      });
+    } else {
+      toast(number);
+    }
+  });
+
+  // Offer the log form straight after dialling, while it is fresh.
+  $('call-go').addEventListener('click', function () {
+    $('call-log-form').hidden = false;
+    $('f-call-note').focus();
+  });
+
+  $('call-log-open').addEventListener('click', function () {
+    $('call-log-form').hidden = !$('call-log-form').hidden;
+
+    if (!$('call-log-form').hidden) { $('f-call-note').focus(); }
+  });
+
+  $('call-cancel').addEventListener('click', function () {
+    $('call-log-form').hidden = true;
+  });
+
+  $('call-save').addEventListener('click', saveCall);
 
   /* ------------------------------------------------------------ access */
 
@@ -1131,6 +1360,9 @@ textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
           amount: data.amount == null ? null : data.amount,
           occurredOn: data.occurredOn || '',
           summary: data.summary || '',
+          phone: data.phone || '',
+          calls: Array.isArray(data.calls) ? data.calls : [],
+          lastCallAt: data.lastCallAt || '',
           notes: Array.isArray(data.notes) ? data.notes : [],
           createdAt: data.createdAt || '',
           updatedAt: data.updatedAt || ''
@@ -1140,7 +1372,9 @@ textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
       render();
 
       if (selectedId && !$('panel').hidden) {
-        renderNotes(clients.filter(function (c) { return c.id === selectedId; })[0]);
+        var current = clients.filter(function (c) { return c.id === selectedId; })[0];
+        renderNotes(current);
+        renderCallbox(current);
       }
     }, function (error) {
       $('view').innerHTML = '<div class="state state--error">The case list stopped updating (' +

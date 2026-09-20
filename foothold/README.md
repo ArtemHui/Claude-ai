@@ -117,11 +117,14 @@ One document per case in the `clients` collection:
 | Field | Notes |
 |---|---|
 | `name` | required |
-| `contact` | one route, phone or email |
+| `phone` | dialled via a `tel:` link; falls back to `contact` when that looks like a number |
+| `contact` | any other route, e.g. email |
 | `scamType` | matches the landing page's eight routes, plus `other` |
 | `status` | `new` → `contacted` → `active` → `submitted` → `closed` |
 | `amount`, `occurredOn`, `summary` | all optional |
 | `notes[]` | `{at, text}`, appended, newest shown first |
+| `calls[]` | `{at, outcome, minutes, note}`, pruned to the most recent 60 |
+| `lastCallAt` | ISO timestamp of the most recent logged call |
 | `createdAt`, `updatedAt` | ISO timestamps |
 
 Notes live inside the case document rather than in their own collection, which
@@ -182,3 +185,24 @@ document well inside the 256 KiB body limit.
 
 The log is itself personal data about your staff — include it in whatever
 retention policy you set for the case records.
+
+## Calling
+
+A case with a phone number shows a call box in its detail panel: the number, a
+**Call** button, and **Copy**.
+
+The Call button is a `tel:` link. On an iPad or phone that opens the dialler or
+FaceTime, which is the intended path. On a desktop browser it opens whatever
+handler is registered (Skype, Teams) or does nothing at all, so the number is
+always displayed in full next to it with a copy button — there is never a dead
+end. The page says as much beneath the button.
+
+In-browser VoIP is not possible here: a provider like Twilio needs network calls
+to its API, and the artifact sandbox blocks them. If you later connect a
+telephony service to claude.ai as a connector, the `mcp` capability could place
+calls from the page directly; that is the only route to real click-to-dial.
+
+Tapping Call opens the log form immediately, while the conversation is fresh.
+A logged call records outcome (spoke / voicemail / no answer / will call back),
+optional duration and a note, and appears as a dated list on the case. Calls are
+included in the CSV export.
